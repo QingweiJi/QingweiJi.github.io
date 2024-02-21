@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="aZAi_GzxF1r-D-Yf309Fem5hn2LOFQL5nzT0ytAcrok">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha256-/4UQcSmErDzPCMAiuOiWPVVsNN2s3ZY/NsmXNcj0IFc=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.15.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="ElasticFlow: An Elastic Serverless Training Platform for Distributed Deep Learning[PDF][Code][Video]是北京大学Liu Xuanzhe教授和Jin Xin教授团队发表在计算机体系结构&#x2F;并行与分布式计算&#x2F;存储系统领域A类会议ASPLOS’23年的一篇论文，其中一作是Gu Diandian博士，二作Zha">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ElasticFlow: Serverless DDL Training is better?">
+<meta property="og:url" content="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/index.html">
+<meta property="og:site_name" content="QingweiJi&#39; Blog">
+<meta property="og:description" content="ElasticFlow: An Elastic Serverless Training Platform for Distributed Deep Learning[PDF][Code][Video]是北京大学Liu Xuanzhe教授和Jin Xin教授团队发表在计算机体系结构&#x2F;并行与分布式计算&#x2F;存储系统领域A类会议ASPLOS’23年的一篇论文，其中一作是Gu Diandian博士，二作Zha">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/2.png">
+<meta property="og:image" content="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/8.png">
+<meta property="og:image" content="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/3.png">
+<meta property="og:image" content="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/9.png">
+<meta property="og:image" content="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/1.png">
+<meta property="og:image" content="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/10.png">
+<meta property="og:image" content="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/11.png">
+<meta property="og:image" content="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/5.png">
+<meta property="og:image" content="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/12.png">
+<meta property="article:published_time" content="2023-07-21T03:21:53.000Z">
+<meta property="article:modified_time" content="2023-08-15T07:49:45.250Z">
+<meta property="article:author" content="QingweiJi">
+<meta property="article:tag" content="分布式训练">
+<meta property="article:tag" content="任务调度优化">
+<meta property="article:tag" content="弹性训练">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/2.png">
+
+
+<link rel="canonical" href="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/","path":"2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/","title":"ElasticFlow: Serverless DDL Training is better?"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>ElasticFlow: Serverless DDL Training is better? | QingweiJi' Blog</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QingweiJi' Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Background-And-Motivation"><span class="nav-number">1.</span> <span class="nav-text">Background And Motivation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E4%BA%8E%E9%97%AE%E9%A2%98%EF%BC%881%EF%BC%89"><span class="nav-number">1.1.</span> <span class="nav-text">对于问题（1）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E4%BA%8E%E9%97%AE%E9%A2%98%EF%BC%882%EF%BC%89"><span class="nav-number">1.2.</span> <span class="nav-text">对于问题（2）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E4%BA%8E%E9%97%AE%E9%A2%98%EF%BC%883%EF%BC%89"><span class="nav-number">1.3.</span> <span class="nav-text">对于问题（3）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#System-Challenges-DL-Job-Characteristics"><span class="nav-number">2.</span> <span class="nav-text">System Challenges&#x2F;DL Job Characteristics</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#non-linear-scaling-curve"><span class="nav-number">2.1.</span> <span class="nav-text">non-linear scaling curve</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#topology-dependent-placement"><span class="nav-number">2.2.</span> <span class="nav-text">topology-dependent placement</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Architecture-Design"><span class="nav-number">3.</span> <span class="nav-text">Architecture Design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Admission-Control"><span class="nav-number">3.1.</span> <span class="nav-text">Admission Control</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Resource-Allocation"><span class="nav-number">3.2.</span> <span class="nav-text">Resource Allocation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Job-Placement"><span class="nav-number">3.3.</span> <span class="nav-text">Job Placement</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Recall-the-Starting-Questions"><span class="nav-number">4.</span> <span class="nav-text">Recall the Starting Questions</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Q1%EF%BC%9A%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">4.1.</span> <span class="nav-text">Q1：应用场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q2%EF%BC%9A%E7%A6%BB%E7%BA%BF-or-%E5%9C%A8%E7%BA%BF-%E4%BB%BB%E5%8A%A1"><span class="nav-number">4.2.</span> <span class="nav-text">Q2：离线 or 在线 任务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q3%EF%BC%9Anon-linear-scaling-curve"><span class="nav-number">4.3.</span> <span class="nav-text">Q3：non-linear scaling curve</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q4%EF%BC%9A%E4%BB%BB%E5%8A%A1%E6%94%BE%E7%BD%AE"><span class="nav-number">4.4.</span> <span class="nav-text">Q4：任务放置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Serverless-or-Server-Centric"><span class="nav-number">5.</span> <span class="nav-text">Serverless or Server-Centric?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#At-the-End"><span class="nav-number">6.</span> <span class="nav-text">At the End</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#References"><span class="nav-number">7.</span> <span class="nav-text">References</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">QingweiJi</p>
+  <div class="site-description" itemprop="description">Talk is cheap. Show me the papers.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="QingweiJi">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QingweiJi' Blog">
+      <meta itemprop="description" content="Talk is cheap. Show me the papers.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="ElasticFlow: Serverless DDL Training is better? | QingweiJi' Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ElasticFlow: Serverless DDL Training is better?
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-07-21 11:21:53" itemprop="dateCreated datePublished" datetime="2023-07-21T11:21:53+08:00">2023-07-21</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-08-15 15:49:45" itemprop="dateModified" datetime="2023-08-15T15:49:45+08:00">2023-08-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87%E7%B2%BE%E5%BA%A6/" itemprop="url" rel="index"><span itemprop="name">论文精度</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>ElasticFlow: An Elastic Serverless Training Platform for Distributed Deep Learning<a target="_blank" rel="noopener" href="https://dl.acm.org/doi/10.1145/3575693.3575721">[PDF]</a><a target="_blank" rel="noopener" href="https://github.com/pkusys/ElasticFlow/tree/main/ElasticFlow">[Code]</a><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=99SiHtckGWc">[Video]</a>是北京大学Liu Xuanzhe教授和Jin Xin教授团队发表在计算机体系结构/并行与分布式计算/存储系统领域A类会议ASPLOS’23年的一篇论文，其中一作是Gu Diandian博士，二作Zhao Yihao博士已经连续两年以第一作者身份发表了网络领域顶会Sigcomm论文。</p>
+<p>本文是对ElasticFlow论文的深入分析与探讨。</p>
+<span id="more"></span>
+<p>ElasticFlow[1]是一个面向分布式训练的弹性无服务器训练平台，聚焦于两点：</p>
+<p>（1）保障Deep learning用户的SLO需求，即deadline</p>
+<p>（2）以Serverless computing的形式来支持ML任务的弹性训练</p>
+<p>也就是说，ElasticFlow的目标不是加速单个任务训练进程，而是在多任务调度场景下，利用ML workload的弹性以无服务器的形式为任务训练提供性能保障。</p>
+<p><strong>我们需要带着以下几个问题，再过头来重读论文：</strong></p>
+<p><strong>Q1：应用场景：</strong><br>论文中使用的是同构资源的单一集群环境？是否适用于异构资源的多集群呢？如TapFinger<a target="_blank" rel="noopener" href="https://i.cs.hku.hk/~cwu/papers/yhli-infocom23.pdf">[Infocom’23]</a>[2]中设置的multi-cluster edge network场景</p>
+<p><strong>Q2：离线 or 在线 任务：</strong><br>论文中的训练任务都是离线的吗？如果是在线达到的任务呢？算法效果还会一如既往的好吗？</p>
+<p><strong>Q3：non-linear scaling curve：</strong><br>关于每个任务在不同时间单位分配了不同数量的GPU资源后吞吐量变化曲线是如何得到的呢？其中每时间单位每个GPU的吞吐与什么有关？是否与GPU的类型以及任务信息都是息息相关的呢？</p>
+<p><strong>Q4：任务放置：</strong><br>任务放置决策会如何影响任务的完成时间进而影响SLO性能保障？以及为了简化问题求解或者简化整个调度问题之间的耦合关系，如何解耦整个系统流程呢？包括准入控制、资源分配以及任务放置？此外，拓扑依赖的任务放置，考虑的拓扑是什么？这样做是否合理？</p>
+<p>对于ElasticFlow论文的相关解析，也可以参考上海交通大学EPCC薛春宇博士的一篇文章，具体内容发表在了他的<a target="_blank" rel="noopener" href="https://github.com/DicardoX/Individual_Paper_Notes/tree/main/ElasticFlow">[github]</a>中，薛博士主要从整体设计以及逻辑方面来解析论文。</p>
+<h2 id="Background-And-Motivation"><a href="#Background-And-Motivation" class="headerlink" title="Background And Motivation"></a>Background And Motivation</h2><p>我们首先给出几个关键词：指定GPU资源配置、考虑底层系统、聚焦于优化JCT。</p>
+<p>将这三个关键词进行组合，即可得出现有的分布式深度学习训练任务的调度研究存在的以下几个问题：</p>
+<p>（1）大多数已有工作需要用户提交/指定训练任务的具体资源配置，如GPU类型、数量等，包括经典工作Gandiva<a target="_blank" rel="noopener" href="https://www.usenix.org/system/files/osdi18-xiao.pdf">[OSDI’18]</a>[3]、Tiresias<a target="_blank" rel="noopener" href="https://www.usenix.org/conference/nsdi19/presentation/gu">[NSDI’19]</a>[4]</p>
+<p>（2）大多数已有工作在调度系统设计上采用的都是以服务器为中心的模式，这样就将底层系统问题与DL任务调度问题进行耦合/绑定，使问题变复杂</p>
+<p>（3）大多数已有工作关注的是如何提升系统效率（主要是降低任务的完成时间）、或保障任务之间的公平性，而对于保障任务的SLO需求的研究关注较少</p>
+<h3 id="对于问题（1）"><a href="#对于问题（1）" class="headerlink" title="对于问题（1）"></a>对于问题（1）</h3><p>已有许多研究提出了相应的解决方案，即在用户提交任务时无需指定具体的资源配置方案，如OASIS<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=8486422">[INFOCOM’18]</a>、Pollux<a target="_blank" rel="noopener" href="https://www.usenix.org/conference/osdi21/presentation/qiao">[OSDI’21]</a>，这是一种弹性的资源分配方式。其原因主要是DML任务的独特的特征会导致任务的完成时间无法准确估计，从而导致配置资源非常依赖于DL开发人员的工程经验。</p>
+<pre><code>DML任务的独特特征包括：
+
+资源需求弹性[5]：使用不同资源配置时，任务所需要的完成时间不同
+
+放置敏感性[3]：任务的所有训练节点是否放置在同一台物理服务器上对任务的执行时间有影响
+
+资源消耗的不均匀性[6]：任务的运行速度通常是分配的资源量(worker数量)的凹函数，不是线性正比的
+--- 这一条对应着文中提到的non-linear scaling curve
+</code></pre><p>在这里，笔者需要明确一个概念，那就是弹性训练包括几层意思。根据笔者阅读了多篇论文后，得出以下结果：</p>
+<ul>
+<li>用户在提交任务时不指定资源配置，由调度系统弹性分配</li>
+<li>在任务运行过程中，动态改变分配的资源的位置或数量，实现手段包括抢占、任务迁移等</li>
+</ul>
+
+<p><strong><em>对于如何实现/支持弹性，笔者在之前的<a target="_blank" rel="noopener" href="https://qingweiji.github.io/2023/03/26/How-To-Support-Elastic-Trainging/">blog</a>中也已经提及。</em></strong></p>
+<h3 id="对于问题（2）"><a href="#对于问题（2）" class="headerlink" title="对于问题（2）"></a>对于问题（2）</h3><p>已有的工作确实基本都是以服务器为中心的形式，在这两年才有部分研究转向无服务器的形式。正如文中所说，以服务器为中心的形式，将DML模型训练问题和系统调度问题紧密的耦合在了一起。DML开发人员需要显式地请求具体的硬件资源并配置及其来运行训练任务。虽然现实情况是worker或者PS都是通过docker/VM的形式来使用，借助容器化的技术简化了系统配置并使得程序具有可移植性，但DML开发人员仍需要负责把任务相关的代码加载/包装到容器中。</p>
+<p>更重要的是，由于绑定了底层系统，DML训练任务就会受到GPU等硬件资源的使用限制，因为DML开发人员面临基于GPU内存来调整本地batch size和决定每个时间单位分配给不同任务的资源数量的问题，这都是与底层系统息息相关的。这些问题既影响超参数的调整（如全局batch size、学习率等），也影响不同资源量下的scaling curve，从而对最终的任务完成时间产生影响。当任务训练目标为SLO性能保障时，极有可能无法满足任务的训练需求。</p>
+<h3 id="对于问题（3）"><a href="#对于问题（3）" class="headerlink" title="对于问题（3）"></a>对于问题（3）</h3><p>现有的为DML训练任务量身定制的ML调度系统工作中，确实很少关注任务的SLO需求，除了Chronus<a target="_blank" rel="noopener" href="https://qingweiji.github.io/2023/04/13/A-Deadline-Aware-Scheduler-for-DLT-Jobs%C2%B721-SoCC/">[SoCC’21-blog]</a>，笔者在之前的博客中已经详细解读该文章。据笔者所知，Chronus应该是第一个为具有SLO需求的DML任务专门设计的一个调度器。ElasticFlow与Chronus的有三点明显不同。</p>
+<ul>
+<li>
+调度系统目标：
+<ul>
+<li>
+Chronus期望通过设计一个DL调度器，来有效满足不同类型任务的各种训练需求，即保证SLO任务的完成期限的同时，最大限度地提高Best-effort任务的训练性能。
+</li>
+<li>ElasticFlow的关注点在于为任务分配能够满足其deadline要求的最少的资源量，并尽可能提高集群的资源使用率</li>
+</ul>
+</li>
+
+<li>
+是否支持弹性训练：
+<ul>
+<li>Chronus严格来讲，是不支持弹性训练的，也就是说它所说的弹性与我们严格定义的弹性训练定义不符。Chronus中的弹性指的是动态改变任务的训练租期，但是训练使用的资源量和位置是不变的，相当于全部资源被抢占后挂起或者恢复训练。
+</li>
+<li>ElasticFlow是严格符合弹性训练的定义，用户不指定资源配置，以及训练过程中动态改变每个时间单位上分配的资源数量。
+</li>
+</ul>
+</li>
+<li>
+以服务器为中心 vs. 无服务器：
+
+Chronus是以服务器为中心的调度系统，这也是ElasticFlow与其对比的一个重点。根据文中总结的现有解决方案的限制的第二条为“Chronus仍然采用以服务器为中心的方法，缺乏弹性地扩展或者收缩任务资源量以优化集群资源利用率并满足deadline的灵活性”。笔者不太赞同第一点，因为现有部分研究已经证明以服务器为中心的调度系统依然可以实现弹性训练的，并部署在大规模集群中使用，比如阿里的ElasticDL框架。
+</li>
+</ul>
+
+<p><strong>此处我们存疑，带着疑问往下看！</strong></p>
+<h2 id="System-Challenges-DL-Job-Characteristics"><a href="#System-Challenges-DL-Job-Characteristics" class="headerlink" title="System Challenges/DL Job Characteristics"></a>System Challenges/DL Job Characteristics</h2><p>在具体的系统设计之前，笔者将系统设计的挑战，更直白地说，是设计一个deadline-aware的DML弹性调度器的挑战，或者说由于DL任务的特征造成的困难，由于DL提前插播到这个章节中。</p>
+<p>毕竟抛去serverless computing这种新形式不谈，以下两点才是弹性调度器设计上存在的挑战/难点。</p>
+<h3 id="non-linear-scaling-curve"><a href="#non-linear-scaling-curve" class="headerlink" title="non-linear scaling curve"></a>non-linear scaling curve</h3><p>non-linear scaling curve，中文可以翻译为非线性规模曲线，这是设计系统设计方面的一个关键基本点。简单来说，就是在直觉方面，分布式训练中使用的worker资源越多，训练效率或者训练吞吐就会越高，呈现一种线性正比的关系。但实际上是由于参数同步和其他凯西奥，吞吐量并不会随着worker数量的增加而线性增长，而是一种次线性的关系，<strong>即存在边际效应递减的现象</strong>。这个对应于上面我们所说的DML任务特征中的第三条“资源消耗的不均匀性”。</p>
+<p><img src="/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/2.png" alt></p>
+<center>图1：Scaling curves of popular DNN models[1]</center>
+
+
+<p><img src="/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/8.png" alt></p>
+<center>图2：Training speed-up with different worker/PS numbers[7]</center>
+
+<p>其中，图2是在不同数量的worker下（对于每一个数据点，PS个数等于 worker个数），和只有单个worker、单个PS的情形相比，所取得的训练加速。可以发现，训练加速并不随着PS（和worker）的数量呈线性增长。</p>
+<p>因此，deadline-aware的DML弹性调度器在设计时应该考虑资源分配的这个特征，以确保分配的资源能够提供足够的吞吐使得任务在ddl前完成。</p>
+<p><strong><em>注意：此处存在一个疑问，那就是这个non-linear scaling curve如何得到呢？这也是笔者在上面的Q3中提出的。</em></strong></p>
+<h3 id="topology-dependent-placement"><a href="#topology-dependent-placement" class="headerlink" title="topology-dependent placement"></a>topology-dependent placement</h3><p>分布式训练任务的性能不仅取决于分配的worker数量，还取决于这些worker的拓扑位置。这与worker之间进行参数同步时的通信带宽有关，通信带宽的大小会影响参数同步的速度，也就是影响通信时间。通信带宽的大小由workers的连接方式决定的。当任务调度场景为单一大规模GPU集群时，主要分为三种情况：</p>
+<ul>
+<li>
+分配的所有workers在同一台物理服务器(server)上：
+通信可以使用PCIe(32 GB/s bandwidth for PCIe 4.0×16) 或者 NVLink(600 GB/s bidirectional bandwidth for third-generation NVIDIA NVLink)
+</li>
+<li>
+分配的所有workers在同一个机架(rack)的不同物理服务器上：
+通信带宽由网络决定，通常为40Gbps以太网，200 Gbps InfiniBand, 或者 8×200 Gbps InfiniBand用于高端GPU服务器
+</li>
+<li>
+分配的所有workers在不同机架上：通常为带宽较低的局域网
+</li>
+</ul>
+
+<p>而当任务需要跨集群训练时，不同集群/数据中心之间是靠广域网连接的，此时带宽会更低，通信开销会成为任务训练过程中的瓶颈。</p>
+<p><img src="/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/3.png" alt></p>
+<center>图3：Throughputs of different placements for 8-GPU jobs for two models ResNet-50 and BERT[1]</center>
+
+
+<p><img src="/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/9.png" alt></p>
+<center>图4：Different sensitivity to intra-server locality for two models VGG16 and ResNet-50[3]</center>
+
+<p>图4是经典论文Gandiva[3]中提供的一个关于“位置亲和性”特征的示例。</p>
+<pre><code>根据文中的解释：
+多gpu DL任务的性能取决于所分配gpu的亲和性。不同的DL任务对gpu之间的亲和力表现出不同程度的敏感性。
+即使对于同一台机器上的gpu，由于不对称架构，我们也观察到不同级别的gpu间亲和性:
+两个gpu可能位于不同的CPU插槽中(表示为DiffSocket)，在同一个CPU插槽中；
+在不同的PCIe交换机上(表示为SameSocket)，或者在相同的PCIe交换机上(表示为SamePCIeSw)。
+</code></pre><h2 id="Architecture-Design"><a href="#Architecture-Design" class="headerlink" title="Architecture Design"></a>Architecture Design</h2><p><img src="/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/1.png" alt></p>
+<center>图5：系统架构</center>
+
+<p><strong>输入：</strong></p>
+<p>DL开发人员向系统提交需要训练的任务及其相关信息，需要包含以下参数：</p>
+<p>（1）DNN模型</p>
+<p>（2）超参数，即训练超参数，如全局批大小、学习率等</p>
+<p>（3）终止条件，表示任务训练完成的标志。DL开发人员只需要指定迭代的最大次数，也可以添加其他条件，比如达到一定的精度</p>
+<p>（4）deadline，这是DL开发人员对任务的SLO需求</p>
+<p>（5）其他训练组件(如数据集、优化器等)</p>
+<p>通过输入信息可知，用户只需提出自己的性能需求，并指定一些超参数，而系统层面的资源分配问题，则是由ElasticFlow算法决定的，如基于GPU内存来决定local batch size和给每个任务在不同时间单位上分配的worker数目。</p>
+<p><strong>输出：</strong></p>
+<p>任务一旦被接纳，其deadline一定能够被保障。训练结束的标志是在deadline前完成该任务需要的最大迭代次数。</p>
+<p>根据图1中的系统架构，也可以很清晰的看出系统流程：接纳控制、资源分配、任务放置，其中集群的状态一直被监控，时刻为其他步骤进行做调整。</p>
+<pre><code>注意：无服务器形式就不存在任务的训练模式是PS还是All-reduce，只通过任务的终止条件来判断是否完成训练
+</code></pre><h3 id="Admission-Control"><a href="#Admission-Control" class="headerlink" title="Admission Control"></a>Admission Control</h3><p>此处使用<strong>资源使用量(resource usage)= GPU数量 X GPU运行时间</strong>，而非<strong>资源量(如GPU数量)</strong> 来确定任务$i$能够满足deadline的而需要分配的最小资源量，即最小满意份额(Minimum Satisfactory Share)。</p>
+<p>对于满足linear-scaling-curve的任务，无论分配的GPU数量是多少，每个GPU的吞吐都是相同的。所以令$T_i(x_i) = {k_i} * {x_i}$表示为任务$i$的scaling-curve，也就是当分配给任务$i$的GPU数量为$x_i$并且每块GPU的吞吐都是$k_i$时任务$i$的吞吐。其中，$k_i$是由每个时间单位内一个GPU(通常看作一个worker)上完成的迭代次数来决定的。</p>
+<p><strong><em>到目前为止，文中还没有提到如何得到任务的scaling-curve</em></strong></p>
+<p><strong>定理：</strong> 对任务按deadline升序排序，若任意任务$i$，前$i$个任务的GPU时间之和小于GPU总数*第i个任务的ddl，那么就存在一个合理的分配方案，能够保障所有任务的ddl被满足。</p>
+<p><img src="/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/10.png" alt></p>
+<center>图6：定理表达式</center>
+
+<p>其中，$M_j$是GPU $j$ 要运行的最大的迭代次数，即训练结束条件。$D_i$是任务$i$的deadline，G是GPU的总数。</p>
+<p>可能有人觉得此处符号有点混乱，其实不是的。在算法1的第13行中明确说明：for $j$ from 1 to G do。这与刚开始我们提到的使用的是resource usage的定义是一样的，即GPU的数量*运行时间。</p>
+<p>并定义了另外两个约束，分别用于满足任务的ddl(2)以及资源容量限制(3)。</p>
+<p><img src="/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/11.png" alt></p>
+<center>图7：接纳控制约束条件</center>
+
+<p>但是对于DML任务来说，他们的吞吐量曲线是非线性的，不能直接套用这个线性假设定理。文中采用了一种渐进式填充算法 (Prograssive Filling)，具体的算法思想非常简单，可以直接看原文，也可以看Xue Chunyu博士的<a target="_blank" rel="noopener" href="https://github.com/DicardoX/Individual_Paper_Notes/tree/main/ElasticFlow">[文章解析]</a>。此外，文中提供了一个案例，来模拟算法1的运行流程。</p>
+<p><img src="/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/5.png" alt></p>
+<center>图8：ElasticFlow准入控制示例</center>
+
+
+<p>图8为ElasticFlow的接纳控制示例。最后的结论是完成一个任务的GPU运行时间取决于其他任务的GPU使用情况。我们通过这个case来详细说明。假设图(a)为任务C的scaling-curve，使用1个、2个和4个GPU时，吞吐量分别为1、1.5和2。因此，如果用一个GPU训练一个任务需要一个时间单位，那么用两个GPU训练任务需要$\frac{2}{3}$个时间单位，用四个GPU则需要$\frac{1}{2}$个时间单位，所以使用1、1.5或2个GPU时“资源使用量”为1、$\frac{4}{3}$、2个时间单位。假设$D_c=2$，$M_c=3$，，并且此时系统中已经存在两个任务A和B，并且假设A和B分别需要在一个时间单位内使用1个和2个GPU。</p>
+<p>如果$j=2$，那么任务C在第一个时间单位只能使用一个GPU，在第二个时间单位使用2个GPU。在这种情况下，$\sum_{t=0}^{2}{T_c({x_c(t)})={T_c(1)}+{T_c(2)}=2.5&lt;{M_c}}$，意味着任务C在2个时间单位内无法完成。</p>
+<p>如果$j=4$，那么任务C在第一个时间单位只能使用一个GPU，在第二个时间单位使用4个GPU。在这种情况下，$\sum_{t=0}^{2}{T_c({x_c(t)})={T_c(1)}+{T_c(4)}=3\ge{M_c}}$，意味着任务C在deadline（也就是$t=2$）前可以完成。也就是任务C的最小满意份额为第一个时间单位使用1个GPU，第二个时间单位使用4个GPU。</p>
+<pre><code>注意：分配原则为“当为任务分配其最小的可运行份额时，资源使用将最小化”
+</code></pre><h3 id="Resource-Allocation"><a href="#Resource-Allocation" class="headerlink" title="Resource Allocation"></a>Resource Allocation</h3><p>资源分配部分也是一直遵守 <strong><em>non-linear scaling curve</em></strong> 结论，或者叫 <strong><em>收益递减效应</em></strong>（分配越多的GPU数量给任务$i$，则其消耗的GPU时间就越多）。</p>
+<p>在上一步接纳任务后，再来确定分配给任务$i$的GPU数量，以最小化所有接纳任务消耗的GPU总时间为目标，约束包括三个：</p>
+<p>(1) ddl满足约束：所有任务的 DDL 被满足；</p>
+<p>(2) 资源容量约束：总分配 GPU 数目不超过当前可用 GPU 数目；</p>
+<p>(3) 在下一个时间单位中所有 GPUs 均被分配，除非给任一任务分配更多资源都会导致执行更慢。</p>
+<p><img src="/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/12.png" alt></p>
+<center>图9：资源分配模型</center>
+
+<h3 id="Job-Placement"><a href="#Job-Placement" class="headerlink" title="Job Placement"></a>Job Placement</h3><p>在决策好给每个任务分配的GPU数量后，需要放置任务。这部分其实很多系统论文中都提出了相关的思路，比如作者提出的这个 <strong><em>Topology-aware job placement</em></strong> 在笔者之前写过的SoCC’21论文Chronus中就明确提出过。ElasticFlow中借鉴了HiveD论文中提出下hide多级架构集群模式。</p>
+<h2 id="Recall-the-Starting-Questions"><a href="#Recall-the-Starting-Questions" class="headerlink" title="Recall the Starting Questions"></a>Recall the Starting Questions</h2><p>其实笔者重读这篇论文，也是带着自己想要知道的问题去阅读的。现在让我们回过头来，重新看一下开头提出的那些问题，现在是否已经有了答案。</p>
+<h3 id="Q1：应用场景"><a href="#Q1：应用场景" class="headerlink" title="Q1：应用场景"></a>Q1：应用场景</h3><p>问题：论文中使用的是同构资源的单一集群环境？是否适用于异构资源的多集群呢？如TapFinger<a target="_blank" rel="noopener" href="https://i.cs.hku.hk/~cwu/papers/yhli-infocom23.pdf">[Infocom’23]</a>[2]中设置的multi-cluster edge network场景</p>
+<p>回答：读完文章，根据模型和实验环境可以很明确的确定是具有同构资源的单一集群环境。但是根据近期国家的发展战略，跨域协同的智算中心场景，或者说东数西算正在大力推广。所以ElasticFlow框架是不适合用于具有异构资源的多集群环境的。</p>
+<p>ElasticFlow中scaling curve只与每个时间单位分配的GPU数量有关，如果要适用于异构多边缘集群这种场景，还需要考虑GPU的类型，以及集群之间的负载均衡。此外，还需要考虑新到达任务的profiling部分要在哪个集群中进行。</p>
+<h3 id="Q2：离线-or-在线-任务"><a href="#Q2：离线-or-在线-任务" class="headerlink" title="Q2：离线 or 在线 任务"></a>Q2：离线 or 在线 任务</h3><p>问题：论文中的训练任务都是离线的吗？如果是在线达到的任务呢？算法效果还会一如既往的好吗？</p>
+<p>回答：根据笔者的推断，应该是一批离线任务。如果是在线到达的任务，算法效果可能并不能达到离线所得，并且需要设计一个具有理论保障的在线算法机制，并分析竞争比。</p>
+<h3 id="Q3：non-linear-scaling-curve"><a href="#Q3：non-linear-scaling-curve" class="headerlink" title="Q3：non-linear scaling curve"></a>Q3：non-linear scaling curve</h3><p>问题：关于每个任务在不同时间单位分配了不同数量的GPU资源后吞吐量变化曲线是如何得到的呢？其中每时间单位每个GPU的吞吐与什么有关？是否与GPU的类型以及任务信息都是息息相关的呢？</p>
+<p>回答：最重要的是如何得到吞吐曲线。笔者认为，这个曲线的变化应该是与GPU数量（文中是同构资源）和任务的超参数（如全局batch size、学习率）等都是相关的。Chronus中是采取了Prof.You Yang的一个公式，ElasticFLow中根据第五章节<strong><em>Throughput profiling</em></strong> 部分可知，直接使用不同数量的GPU来分析其吞吐，应该就是预训练。</p>
+<p>笔者认为，对于吞吐值，可以参考两篇论文：<strong>一篇是Peng Yanghua博士的Optimus，另一篇是Aurick Qiao博士的Pollux</strong>，都是DML调度系统设计方面非常经典的设计方案。</p>
+<h3 id="Q4：任务放置"><a href="#Q4：任务放置" class="headerlink" title="Q4：任务放置"></a>Q4：任务放置</h3><p>问题：任务放置决策会如何影响任务的完成时间进而影响SLO性能保障？以及为了简化问题求解或者简化整个调度问题之间的耦合关系，如何解耦整个系统流程呢？包括准入控制、资源分配以及任务放置？此外，拓扑依赖的任务放置，考虑的拓扑是什么？这样做是否合理？</p>
+<p>回答：根据上文中我们的分析可知任务在单一集群中有三种放置方式，不同任务放置方式下使用的通信带宽不同，继而得到的任务的完成时间也就不同，能否在deadline之前完成任务，是ElasticFlow是否接受该任务的关键。</p>
+<p>ElasticFlow与其他大部分的系统论文相同，将任务的资源分配决策与任务放置决策进行了解耦，这在一定程度上简化了任务调度问题的复杂度，这也是系统论文常见的手段。具体来说，就是确定一个可行的资源分配方案，能够实现资源分配阶段的目标，在确定好GPU数量后，再确定具体需要服务该任务的GPU的位置。</p>
+<p>拓扑依赖/感知，其实就是考虑了任务放置的多种情况，这在ML调度系统的经典论文Gandiva和HiveD中早就进行过分析了。</p>
+<h2 id="Serverless-or-Server-Centric"><a href="#Serverless-or-Server-Centric" class="headerlink" title="Serverless or Server-Centric?"></a>Serverless or Server-Centric?</h2><p>解决完上面的问题后，回到我们的题目：Serverless DDL Training is better?</p>
+<p>纵观全文，Serverless是个新的模式，但是根据我们上面的分析，似乎ElasticFlow的设计套用到Server-Centric上也不是不可以？</p>
+<p>是的，从笔者的角度来说，是可以的。笔者认为，ElasticFlow真正的创新点不在于模型训练的形式，而是设计了一个弹性的调度系统以保障任务的SLO需求，这才是ElasticFlow的核心点。</p>
+<p>再往深里说，针对deep learning训练任务，弹性系统的设计本身就存在很多困难，文中主要总结的就是：资源分配的收益递减效应，和拓扑依赖的任务放置。</p>
+<h2 id="At-the-End"><a href="#At-the-End" class="headerlink" title="At the End"></a>At the End</h2><p>ElasticFlow是首个在Serverless Computing模式下通过支持ML任务的弹性训练来保障任务的SLO需求的系统性研究。</p>
+<p>从文章的可读性角度来说，论文作者的文笔和逻辑都非常好，很值得学习。</p>
+<p>从代码的可用性来说，作者做得也是非常不错的，笔者近期正在复现ElasticFlow论文，非常值得笔者学习。</p>
+<p><strong><em>Maybe: Compare the state-of-the-art jobs to make your progress!</em></strong></p>
+<hr>
+<p>BGM：</p>
+<p>童话镇 — 暗杠</p>
+<p>千金散尽 — 杨宗纬</p>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><p>[1]Gu D, Zhao Y, Zhong Y, et al. ElasticFlow: An Elastic Serverless Training Platform for Distributed Deep Learning[C]//Proceedings of the 28th ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 2. 2023: 266-280.</p>
+<p>[2]Li Y, Zeng T, Zhang X, et al. TapFinger: Task Placement and Fine-Grained Resource Allocation for Edge Machine Learning[C]//IEEE INFOCOM. 2023.</p>
+<p>[3]Xiao W, Bhardwaj R, Ramjee R, et al. Gandiva: Introspective cluster scheduling for deep learning[C]//13th {USENIX} Symposium on Operating Systems Design and Implementation ({OSDI} 18). 2018: 595-610.</p>
+<p>[4]Gu J, Chowdhury M, Shin K G, et al. Tiresias: A {GPU} cluster manager for distributed deep learning[C]//16th USENIX Symposium on Networked Systems Design and Implementation (NSDI 19). 2019: 485-500.</p>
+<p>[5]Zhang Q, Zhou R, Wu C, et al. Online scheduling of heterogeneous distributed machine learning jobs[C]//Proceedings of the Twenty-First International Symposium on Theory, Algorithmic Foundations, and Protocol Design for Mobile Networks and Mobile Computing. 2020: 111-120.</p>
+<p>[6]Peng Y, Bao Y, Chen Y, et al. Optimus: an efficient dynamic resource scheduler for deep learning clusters[C]//Proceedings of the Thirteenth EuroSys Conference. 2018: 1-14.</p>
+<p>[7]Peng Y, Bao Y, Chen Y, et al. Dl2: A deep learning-driven scheduler for deep learning clusters[J]. IEEE Transactions on Parallel and Distributed Systems, 2021, 32(8): 1947-1960.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E8%AE%AD%E7%BB%83/" rel="tag"># 分布式训练</a>
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6%E4%BC%98%E5%8C%96/" rel="tag"># 任务调度优化</a>
+              <a href="/tags/%E5%BC%B9%E6%80%A7%E8%AE%AD%E7%BB%83/" rel="tag"># 弹性训练</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/" rel="prev" title="Combinatorial Online Optimization For Online DML Job Scheduling">
+                  <i class="fa fa-chevron-left"></i> Combinatorial Online Optimization For Online DML Job Scheduling
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/08/10/PyTorch-s-Checkpoint-in-DNN-Model-Training/" rel="next" title="PyTorch's Checkpoint in DNN Model Training">
+                  PyTorch's Checkpoint in DNN Model Training <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">QingweiJi</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.2.8/pdfobject.min.js","integrity":"sha256-tu9j5pBilBQrWSDePOOajCUdz6hWsid/lBNzK4KgEPM="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"per_page":true,"tags":"none","cdn":"//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>

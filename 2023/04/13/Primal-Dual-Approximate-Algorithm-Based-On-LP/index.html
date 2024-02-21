@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="aZAi_GzxF1r-D-Yf309Fem5hn2LOFQL5nzT0ytAcrok">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha256-/4UQcSmErDzPCMAiuOiWPVVsNN2s3ZY/NsmXNcj0IFc=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.15.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="本文是笔者本学期旁听的一门博士算法思维课程的相关笔记。本文主要对基于LP(Linear Programming，线性规划)的近似算法，以Primal-Dual为例进行深入分析与总结。笔者主要使用来自香港大学的Wu Chuan老师和东南大学的Zhou Ruiting老师的几篇采用了Primal-Dual方法来求解的论文辅助分析与理解。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Primal-Dual Approximate Algorithm Based On LP">
+<meta property="og:url" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/index.html">
+<meta property="og:site_name" content="QingweiJi&#39; Blog">
+<meta property="og:description" content="本文是笔者本学期旁听的一门博士算法思维课程的相关笔记。本文主要对基于LP(Linear Programming，线性规划)的近似算法，以Primal-Dual为例进行深入分析与总结。笔者主要使用来自香港大学的Wu Chuan老师和东南大学的Zhou Ruiting老师的几篇采用了Primal-Dual方法来求解的论文辅助分析与理解。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/4.png">
+<meta property="og:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/1.png">
+<meta property="og:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/2.png">
+<meta property="og:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/3.png">
+<meta property="og:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/6.png">
+<meta property="og:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/7.png">
+<meta property="og:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/8.png">
+<meta property="og:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/9.png">
+<meta property="og:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/10.png">
+<meta property="og:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/11.png">
+<meta property="og:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/12.png">
+<meta property="article:published_time" content="2023-04-13T08:55:32.000Z">
+<meta property="article:modified_time" content="2023-04-20T12:38:42.052Z">
+<meta property="article:author" content="QingweiJi">
+<meta property="article:tag" content="线性规划">
+<meta property="article:tag" content="近似算法">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/4.png">
+
+
+<link rel="canonical" href="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/","path":"2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/","title":"Primal-Dual Approximate Algorithm Based On LP"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Primal-Dual Approximate Algorithm Based On LP | QingweiJi' Blog</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QingweiJi' Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5-1"><span class="nav-number">1.</span> <span class="nav-text">算法的基本概念[1]</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8ELP%E7%9A%84%E8%BF%91%E4%BC%BC%E7%AE%97%E6%B3%95-2"><span class="nav-number">2.</span> <span class="nav-text">基于LP的近似算法[2]</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LP-Rounding"><span class="nav-number">2.1.</span> <span class="nav-text">LP Rounding</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Primal-Dual"><span class="nav-number">2.2.</span> <span class="nav-text">Primal-Dual</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Local-Search"><span class="nav-number">2.3.</span> <span class="nav-text">Local Search</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8EPrimal-Dual%E7%9A%84%E7%AE%97%E6%B3%95%E8%AE%BE%E8%AE%A1"><span class="nav-number">3.</span> <span class="nav-text">基于Primal-Dual的算法设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99"><span class="nav-number">3.1.</span> <span class="nav-text">算法设计原则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E8%AE%BE%E8%AE%A1%E5%9F%BA%E7%A1%80"><span class="nav-number">3.2.</span> <span class="nav-text">算法设计基础</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#LP%E5%AF%B9%E5%81%B6"><span class="nav-number">3.2.1.</span> <span class="nav-text">LP对偶</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AF%B9%E5%81%B6%E9%97%AE%E9%A2%98%E7%9A%84%E9%87%8D%E8%A6%81%E6%80%A7%E8%B4%A8"><span class="nav-number">3.2.2.</span> <span class="nav-text">对偶问题的重要性质</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E8%AE%BE%E8%AE%A1%E6%80%9D%E6%83%B3"><span class="nav-number">3.3.</span> <span class="nav-text">算法设计思想</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8EPrimal-Dual%E7%9A%84%E5%9C%A8%E7%BA%BF%E7%AE%97%E6%B3%95"><span class="nav-number">4.</span> <span class="nav-text">基于Primal-Dual的在线算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E7%BA%BF%E7%AE%97%E6%B3%95-VS-%E8%BF%91%E4%BC%BC%E7%AE%97%E6%B3%95"><span class="nav-number">4.1.</span> <span class="nav-text">在线算法 VS. 近似算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B%E8%AE%B2%E8%A7%A3"><span class="nav-number">4.2.</span> <span class="nav-text">案例讲解</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="nav-number">5.</span> <span class="nav-text">写在最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">QingweiJi</p>
+  <div class="site-description" itemprop="description">Talk is cheap. Show me the papers.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="QingweiJi">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QingweiJi' Blog">
+      <meta itemprop="description" content="Talk is cheap. Show me the papers.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Primal-Dual Approximate Algorithm Based On LP | QingweiJi' Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Primal-Dual Approximate Algorithm Based On LP
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-04-13 16:55:32" itemprop="dateCreated datePublished" datetime="2023-04-13T16:55:32+08:00">2023-04-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-04-20 20:38:42" itemprop="dateModified" datetime="2023-04-20T20:38:42+08:00">2023-04-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%95%B0%E5%AD%A6%E4%BC%98%E5%8C%96/" itemprop="url" rel="index"><span itemprop="name">数学优化</span></a>
+        </span>
+          ，
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%95%B0%E5%AD%A6%E4%BC%98%E5%8C%96/%E7%AE%97%E6%B3%95%E6%80%BB%E7%BB%93/" itemprop="url" rel="index"><span itemprop="name">算法总结</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>本文是笔者本学期旁听的一门博士算法思维课程的相关笔记。本文主要对基于LP(Linear Programming，线性规划)的近似算法，以Primal-Dual为例进行深入分析与总结。笔者主要使用来自香港大学的Wu Chuan老师和东南大学的Zhou Ruiting老师的几篇采用了Primal-Dual方法来求解的论文辅助分析与理解。</p>
+<span id="more"></span>
+<p>该课程由电子科技大学信息与通信工程学院王晟老师开设，王晟老师在算法分析与设计方面具有多年的理论基础与实践经验，其授课风格也是笔者非常欣赏的，务实有用且融会贯通。笔者常常在听完一节课后感叹课程开设的时间实在是太短了，也经常在听讲过程中多次发掘自己需要学习的东西还非常多。</p>
+<h2 id="算法的基本概念-1"><a href="#算法的基本概念-1" class="headerlink" title="算法的基本概念[1]"></a>算法的基本概念[1]</h2><p><strong><em>定义1：</em></strong></p>
+<p>一个最优化问题$\Pi$指的是一个最大/小化问题，$\Pi$的每一项实例$I$都有一个非空的可行解集合（即可行域），其中任一可行解都对应着一个非负实数（即目标函数值）。因此，一个组合最优化问题$\Pi$指的是一个可行域为有限集合的最优化问题。</p>
+<p><strong><em>定义2：</em></strong></p>
+<p>一个最优化问题被称为NP-Hard的，如果所有NP类问题都可以在多项式时间归约为此问题。</p>
+<p>最优化问题$\Pi$的一个多项式时间算法被成为精确算法，如果它可返回$\Pi$的任一实例的最优解。</p>
+<p>最优化问题$\Pi$的一个多项式时间算法称为$\Pi$的一个近似算法，如果对给定的$\Pi$的一个实例$I$，它可返回$I$的一个非最优解的可行解。</p>
+<p><strong><em>定义3：</em></strong></p>
+<p>最优化问题$\Pi$的近似算法$A$的近似比（也称为性能比、近似因子、相对误差）为$\rho(n)$，如果对$\Pi$的任一实例$I$：$|I|=n$，$A$可返回$I$的一个可行解，且其目标函数值$A_I$满足$max{\left \{ {\frac{A_I}{OPT_I},\frac{OPT_I}{A_I}}\right \}} \le{\rho(n)}$。此时，称$A$为$\Pi$的一个$\rho(n)$-近似算法。</p>
+<p>其中，$OPT_I$表示最优化问题$\Pi$的实例$I$的最优值。需要注意：近似比$\rho(n)$总是一个不小于1的数（或函数）；$\rho(n)$越小，近似程度越好；特别地，当$\rho(n)=1$时，算法$A$即为一个多项式时间精确算法。</p>
+<p><strong><em>定义4：</em></strong></p>
+<p>最优化问题$\Pi$的一个算法族${A_{\epsilon}}$称为$\Pi$的一个多项式时间近似方案(polynomial-time approximation schema，PTAS)，如果对任意给定的$\epsilon&gt;0$，算法${A_{\epsilon}}$都是$\Pi$的一个$(1+{\epsilon})$-近似算法。</p>
+<h2 id="基于LP的近似算法-2"><a href="#基于LP的近似算法-2" class="headerlink" title="基于LP的近似算法[2]"></a>基于LP的近似算法[2]</h2><p>基于LP的近似算法主要分为三类：线性规划舍入(LP Rounding)、原始对偶(Primal-Dual)和局部搜索(Local Search)。其中，LP Rounding和Primal-Dual算法基于LP松弛技术。</p>
+<h3 id="LP-Rounding"><a href="#LP-Rounding" class="headerlink" title="LP Rounding"></a>LP Rounding</h3><p>首先需要给出原问题的ILP(Integer Linear Programming，整数线性规划)模型，然后求解相应的LPR(Linear Programming Relaxation，线性规划松弛)问题得到最优的分数解。通常会根据可行性要求对分数最优解进行改造，最后在（改造的）分数解的基础上构造原问题的整数可行解。因此，LP Rounding的方法需要求解线性规划，所以不是组合算法。虽然LP Rounding是设计近似算法的利器，但应用起来并不容易。</p>
+<h3 id="Primal-Dual"><a href="#Primal-Dual" class="headerlink" title="Primal-Dual"></a>Primal-Dual</h3><p>如果不是对LPR问题进行直接求解，而是设计组合算法给出对偶问题的可行解，并根据该对偶可行解的信息对构造原始问题的证书可行解，通过与对偶可行解比较得到算法的近似比，则称此类算法为Primal-Dual算法。该算法有两个优点：一是该算法时组合算法，可以揭示问题的组合结构；二是该算法具有鲁棒性，容易移植到其他变形问题上。此外，对偶拟合(Dual Fitting)算法可以看作Primal-Dual算法的变形，该算法用组合算法构造对偶解 (不一定可行) 使得费用与原始整数可行解的费用相同, 通过将对偶解一致缩小得到对偶可行解, 同时缩小的系数即为近似比.</p>
+<h3 id="Local-Search"><a href="#Local-Search" class="headerlink" title="Local Search"></a>Local Search</h3><p>在局部搜索算法中, 给定初始可行解, 定义适当的邻域, 通过引入恰当的调整策略, 在邻域中得到改进的可行解,依次迭代下去, 直到按照给定的调整策略不能改进为止。</p>
+<p><strong>原始对偶模式是设计近似算法的首选方法，因为它通常给出具有良好近似保证和良好运行时间的算法。其基本思想是处理NP-Hardd问题及其对偶的LPR问题，然后迭代变换原解和对偶解，直到满足松弛的原始对偶互补松弛条件。因此，Primal-Dual算法的优点在于，它避免了求原始线性规划问题的最优解所耗费的大量时间，从而减少了算法的运行时间。特别是，对于需要求解在线问题的论文来说，如果要求快速求解LP问题的最优解是非常不现实的，利用P-D算法所能带来的加速效果就是必需的了。因此，本文主要对Primal-Dual算法进行深入分析与讨论。</strong></p>
+<h2 id="基于Primal-Dual的算法设计"><a href="#基于Primal-Dual的算法设计" class="headerlink" title="基于Primal-Dual的算法设计"></a>基于Primal-Dual的算法设计</h2><h3 id="算法设计原则"><a href="#算法设计原则" class="headerlink" title="算法设计原则"></a>算法设计原则</h3><p>（1）始终保持对偶可行, 追求主可行</p>
+<pre><code>主可行：始终保持主解为整数, 但直至算法结束, 才能覆盖所有元素。
+</code></pre><p>（2）两个互补松弛条件中，一个被保持，另一个被近似满足</p>
+<pre><code>要点：Primal-Dual算法不需显式求解LP, 但需要LP对偶理论的指导
+(PS：如果不知道LP对偶，那么就无法完全理解Primal-Dual)。
+</code></pre><blockquote>
+<p>注意：近似程度就是最终算法的近似比</p>
+</blockquote>
+<p>由LP对偶理论可知：主可行+对偶可行+满足所有互补松弛条件=最佳解。但是对于NP-Hard问题，显然不能指望这些条件同时满足。</p>
+<h3 id="算法设计基础"><a href="#算法设计基础" class="headerlink" title="算法设计基础"></a>算法设计基础</h3><h4 id="LP对偶"><a href="#LP对偶" class="headerlink" title="LP对偶"></a>LP对偶</h4><p>以一个具体的例子进行说明，方便后面理解：</p>
+<p><img src="/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/4.png" alt></p>
+<center>图1：某机器加工厂在计划期的设备和产品加工信息</center>
+
+<p>原问题：在计划期内，自己生产，使得利润最大。设为生产产品1的数量，为生产产品2的数量。因此，原问题可以写为：</p>
+<p>$max \quad z=50{x_1}+100{x_2}$</p>
+<p>$s.t. \left\{\begin{matrix} {x_1+x_2 \le 300}<br> \\ 2x_1+x_2 \le 400<br> \\ x_2 \le 250<br> \\ x_1,x_2 \ge 0<br>\end{matrix}\right.$</p>
+<blockquote>
+<p>公式都是左对齐的原因是笔者使用的是Latex行内公式的显示方式，而非行间公式，笔者在网上找了很多办法，都无法实现行间公式的正常显示，反而出现如果行间公式正常显示，则Latex的花括号则无法正常显示。</p>
+</blockquote>
+<p>对偶问题：现在有另一个机器厂想要租用你的机器，他们厂的设备使用饱和（或者说很多货）或者他们愿意按使用了机器所有工时支付你钱款。设$y_1,y_2,y_3$分别是你对设备A、B、C的报价，规划问题如下：</p>
+<p>$min \quad \omega=3300{y_1}+400{y_2}+250{y_3}$</p>
+<p>$s.t. \left\{\begin{matrix} y_1+2y_2 \ge 50<br> \\ y_1+y_2+y_3 \ge 100<br> \\ y_1,y_2,y_3 \ge 0<br>\end{matrix}\right.$</p>
+<pre><code>结论1：任何一个LP问题都存在一个对偶问题
+结论2：对偶问题的对偶问题就是原问题
+</code></pre><p>所以，可以通过这个例子简单总结如何由一个最大化问题转化为其对偶问题：</p>
+<p>（1）目标函数改为最小化</p>
+<p>（2）$x_i \ge 0$对应约束条件$\ge$，$x_i$无约束对应约束条件 $=$</p>
+<p>（3）原约束条件$\le$对应$y_i \ge 0$，原约束条件 $=$ 对应$y_i$无约束</p>
+<blockquote>
+<p>补充一点说明：以前笔者研一的时候上过数学学院开设的最优化课程，但是由于在授课时讲述的大部分是如何利用不同的方法来求解一个问题，而非结合具体的例子来弄清楚为什么是这样设计的，这门算法思维课程刚好弥补了这一部分。王晟老师在授课过程中，多次强调，与其去背、去套、去记Primal-Dual的使用方法，不如从实际意义出发，因为有时候根据套路去套这个步骤是容易出错且不理解为什么这样做的。我们可以考虑变量自身约束或者方程的约束条件对于目标函数优化的贡献“方向”。可以设想一个系数全正的目标函数，那么$\ge 0$的变量变换后始终是限制目标函数的，反之亦然。</p>
+</blockquote>
+<h4 id="对偶问题的重要性质"><a href="#对偶问题的重要性质" class="headerlink" title="对偶问题的重要性质"></a>对偶问题的重要性质</h4><ol>
+<li><p>弱对偶性、强对偶性</p>
+<p> 假设原问题得到的可行解为$P=min { {\textstyle \sum_{i=1}^{n}} {c_i{x_i}}}$，最优解为OPT；对偶问题得到的可行解为$D=max  { {\textstyle \sum_{j=1}^{m}} {b_i{y_i}}}$。</p>
+<p> 由对偶性质可知，其满足：$D \le OPT \le P$</p>
+<p> 原问题最优解$\frac{p^{\ast } }{OPT}$和对偶问题最优解$d^{\ast }$之间的差值称为对偶间隙：$p^{\ast } - d^{\ast }$，当对偶间隙为0时，则强对偶成立；当对偶间隙大于0时，则为弱对偶</p>
+</li>
+<li><p>互补松弛性</p>
+<p> 如果原问题的某一约束条件是严格不等式，则对应的对偶变量的值为0；如果原问题的某一约束条件的对偶变量取值为非零，则该约束条件是严格等式</p>
+<blockquote>
+<p>注意：基于Primal-Dual的近似算法从对偶可行解出发, 始终满足松弛的互补松弛条件, 且朝着原问题可行解的方向迭代</p>
+</blockquote>
+</li>
+<li><p>无解性</p>
+<p> 若原问题具有无界解，则其对偶问题无可行解。</p>
+</li>
+</ol>
+<h3 id="算法设计思想"><a href="#算法设计思想" class="headerlink" title="算法设计思想"></a>算法设计思想</h3><p>对于Vertex Cover(VC，顶点覆盖)问题，即在一个图中找出一个最小的点集，使得图中每条边都有一个点在该点集中。对于VC问题的最简单理解，可参考这篇<a target="_blank" rel="noopener" href="https://blog.csdn.net/skewary/article/details/106181667">[blog]</a>。</p>
+<p><strong>因此，VC-ILP（给定问题）可以写为：</strong></p>
+<p>$Minimize \sum_{v \in V}{c_v}{x_v}$</p>
+<p>$s.t. \quad {x_v}+{x_w} \ge{1}, \quad \forall e(u,w)\in{E}$</p>
+<p>${x_v} \in { \left \{ 0,1 \right \}  }, \quad \forall v \in{V}$</p>
+<p><strong>VC-LPR（原问题）可以写为：</strong></p>
+<p>$Minimize \sum_{v \in V}{c_v}{x_v}$</p>
+<p>$s.t. \quad {x_v}+{x_w} \ge{1}, \quad \forall e(u,w)\in{E}$</p>
+<p>${x_v} \ge 0, \quad \forall v \in{V}$</p>
+<p><strong>VC-LPR-D（对偶问题）可以写为：</strong></p>
+<p>$Maximize \sum_{e \in E}{p_e}$</p>
+<p>$s.t. \quad \sum_{e \in {\delta(v)}}{p_e} \le {c_v}, \quad \forall v \in{V}$</p>
+<p>${p_e} \ge 0, \quad \forall e \in{E}$</p>
+<p>因此，我们以VC问题为例可以总结到，设计一个基于P-D的近似算法框架如下：</p>
+<ol>
+<li><p>将给定的问题制定为一个ILP问题，放松变量约束以获得原始LP（即LPR问题），然后找到LPR-D问题</p>
+</li>
+<li><p>对原问题的不可行解$x_v$和对偶可行解$p_e$进行初始化，通常初始化为0</p>
+</li>
+<li><p>for all 可行的$x_v$ do:</p>
+<p> (1)以某种方式增加值$p_e$，直到某些对偶约束变紧（即对偶约束取等号），同时始终保持$p_e$的可行性。换句话所，迭代改进了对偶解的最优性</p>
+<p> (2)选择紧对偶约束的一些子集，并将与这些约束相对应的原始变量$x_v$的值增加一个整数</p>
+<p> end for </p>
+</li>
+<li><p>对偶解的代价作为OPT的下界</p>
+</li>
+</ol>
+<p>在黄红选的《数学规划》中对原始对偶算法的设计思路也是保证对偶可行，满足互补松弛性条件，逐步改善原始不可行性。当它们都被满足时，两个解都是最优解。在迭代过程中，总是对原始解进行整数修正，最终得到一个整数最优解。算法的基本过程如下：</p>
+<p><img src="/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/1.png" alt></p>
+<center>图2：P-D的完整流程</center>
+
+
+<p><img src="/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/2.png" alt></p>
+<center>图3：如何构造第一个对偶可行解</center>
+
+<p>从而，问题转变为：</p>
+<p><img src="/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/3.png" alt></p>
+<center>图4：问题重写</center>
+
+
+<h2 id="基于Primal-Dual的在线算法"><a href="#基于Primal-Dual的在线算法" class="headerlink" title="基于Primal-Dual的在线算法"></a>基于Primal-Dual的在线算法</h2><h3 id="在线算法-VS-近似算法"><a href="#在线算法-VS-近似算法" class="headerlink" title="在线算法 VS. 近似算法"></a>在线算法 VS. 近似算法</h3><p>组合优化问题通常可以分为两类：</p>
+<p>（1）离线问题：即给定所有问题所需的信息对问题进行求解。</p>
+<p>（2）在线问题：某些输入是“逐渐呈现”的，需要在对未来信息未知的情况下对问题进行求解。</p>
+<p>对于许多NP-Hard问题，我们相信给出一个有多项式时间复杂度的最优算法是不可能的。因此，近似算法或者在线算法或许是一个更好的选择。这两种方法都旨在通过将它们与离线最优算法进行比较来提供最坏情况下的性能保证。</p>
+<pre><code>在线问题的特点：这种决策不能延迟，也不可撤销。
+</code></pre><p>不同于离线问题的NP难，在线问题的难点通常在于缺乏未知信息。通过提供完整的未来信息，在线问题可以转化为离线问题，其中一些问题可以在多项式内得到最优解。</p>
+<blockquote>
+<p>注意：</p>
+<p>在线问题中，一般假定过去到达的输入/任务不会离去，因此它们的影响会持续到最后，如果可以离去，则有online scheduling变为了dynamic scheduling问题，那么将会复杂更多。</p>
+<p>在线调度在云计算环境中具有重要的应用。</p>
+</blockquote>
+<p>因此，近似算法的近似比=在线算法的竞争比。所以OASIS(下面的案例)中对算法性能进行分析时，分析的是竞争比，其实就是离线算法的近似比。</p>
+<pre><code>竞争比：在线算法与离线最优算法之间的差距
+</code></pre><h3 id="案例讲解"><a href="#案例讲解" class="headerlink" title="案例讲解"></a>案例讲解</h3><p>我们以毕业于香港大学的Bao Yixin博士发表的论文<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1801.00936.pdf">[OASIS-Infocom’18]</a>为例。</p>
+<p><img src="/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/6.png" alt></p>
+<center>图5：Offline Optimization Problem</center>
+
+<p>问题(1)描述的是一个最大化系统总效用的问题，这是一个混合整数非线性规划(MINLP)问题。该问题既涉及常规约束（如资源容量约束），也涉及任务的完成时间（如约束8）这种非常规约束。并且，在问题(1)中还存在一个固有的结构特征—“三角形覆盖”，即决策变量之间是相互关联的。问题(1)的决策变量有三个：</p>
+<p>$x_i$：二元变量，表示任务$i$是否被接纳；</p>
+<p>$y_{ih}(t)$：整数变量，任务$i$在到达时间$a_i$及之后的每个时隙里物理服务器$h$上部署的worker的数量;</p>
+<p>$z_{ik}(t)$：整数变量，任务$i$在到达时间$a_i$及之后的每个时隙里物理服务器$h$上部署的PS的数量;</p>
+<p>简单理解其关联为：任务$i$到达后，调度器为其分配的worker和PS的数量与其完成时间有关，其完成时间与任务效用有关，任务效用若大于0，则接纳该任务并按照最佳的schedule来安排任务$i$。</p>
+<p>当任务在线时，调度器必须在没有任何未来信息的情况下立即做出决策，进一步加剧了问题求解的难度。因为即使是在离线设置下，问题(1)也是NP难的。为了解决上述求解上的挑战，通过引入一个新的决策变量来将问题(1)重新表述为一个整数线性规划(ILP)问题，其决策变量为二元变量$x_{il}$，表示任务$i$是否被接纳并按照调度方案$l$来执行。本质上来说，就是对问题(1)的决策变量进行打包，因此在重写后的问题(14)中，问题(1)中的许多约束进行了组合，由于这些约束的组合型，每个任务的schedule可能呈现指数级增长（即$x_{il}$是指数级的变量）。</p>
+<p>如果有读过东南大学Zhou Ruiting老师论文的人，尤其是<a target="_blank" rel="noopener" href="https://i2.cs.hku.hk/~cwu/papers/qzhang-mobihoc20.pdf">[Aonline]</a>,<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=10043656">[DPS]</a>就会发现，问题(14)对问题进行重写的方法就是上面两篇论文中用到的“紧凑指数优化”技术。这个技术笔者在之前的<a target="_blank" rel="noopener" href="https://qingweiji.github.io/2023/03/21/Online-Scheduling-of-DML-Jobs-from-ChuanWu-And-Ruiting-Zhou/">[blog]</a>中已经介绍过了，此处不再赘述。</p>
+<p>问题(1)和问题(14)是等价的，因为问题(1)的可行解对应于问题(14)的可行解，反之亦然，它们的目标值相同。</p>
+<p><img src="/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/7.png" alt></p>
+<center>图6：Online Problem Reformulation</center>
+
+<p><strong>注意：问题(14)中只有一个决策变量$x_{il}$，问题(1)中的所有决策变量已经打包进$x_{il}$中里了。</strong></p>
+<p>虽然问题(14)引入了一个指数级的决策变量，但可以通过设计一个高效的在线算法，即利用Primal-Dual框架[11]，实现在多项式内求解ILP问题(14)。具体来说，通过松弛完整性约束(18)和表述出约束(15)(16)(17)的相关对偶变量${p_{h}^{r}(t)},{q_{k}^{r}(t)},{u_i}$，继而来表述出ILP(14)的对偶问题(19)。</p>
+<p><img src="/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/8.png" alt></p>
+<center>图7：对偶问题</center>
+
+<pre><code>注意：在王晟老师讲授Primal-Dual这部分课程的过程中，多次强调，对偶变量的物理含义是人为定义的，需要自己找到。因此，很多对偶变量通常是不具备具体的含义的。
+</code></pre><p>在对偶问题(19)中，对偶变量${p_{h}^{r}(t)},{q_{k}^{r}(t)}$与与服务器$h(k)$上的原始容量约束相关联,可以解释为时隙$t$服务器$h$上$r$类型资源的单位成本，也就是时隙$t$租用服务器$h$上$r$类型资源所需成本，那么，图8和图9分别是任务$i$根据调度方案$l$执行时，所有worker/PS占用的资源总成本。</p>
+<p><img src="/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/9.png" alt></p>
+<center>图8：worker总成本</center>
+
+<p><img src="/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/10.png" alt></p>
+<center>图9：PS总成本</center>
+
+<p>约束(20)的右侧部分表示的是任务效用减去采用调度方案$l$运行任务$i$的总资源成本，为任务效益。根据Primal-Dual框架，为了最大化原始目标函数（即问题14），就需要最小化对偶目标函数（即问题19）。因此，OASIS先比较最优调度方案，也就是使得约束(20)右侧最大的调度方案，然后计算出约束(20)右侧部分的值与0的大小关系，并将其中较大的值赋给对偶变量$u_i$。</p>
+<p><img src="/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/11.png" alt></p>
+<p><img src="/2023/04/13/Primal-Dual-Approximate-Algorithm-Based-On-LP/12.png" alt></p>
+<p>因此，$u_j$可以很好地解释为接纳任务$i$并按照最佳调度方案$l^*$执行后的收益。如果收益为正，那么系统就会接纳该任务；否则，该任务将会被拒绝。理由是，由于资源有限，系统希望接纳具有更大效用和更低资源消耗的任务，以最大化问题(14)。收益为正表明任务效用足够高以证明资源消耗是合理的，并且系统以最大化其收益的方式来调度任务。简单来说，就是在资源有限的情况下，系统希望调度具有更高效益的任务。</p>
+<blockquote>
+<p>震惊了家人们，刚才笔者在找论文的时候，找到了Bao Yixin博士的毕业论文，然后在致谢中发现Dr.Bao的爱人是Dr.Peng，也就是是香港大学的Peng Yanghua博士。做机器学习任务调度优化方向的研究人员应该对他比较熟悉，就是非常经典的Optimus<a target="_blank" rel="noopener" href="https://i.cs.hku.hk/~cwu/papers/yhpeng-eurosys18.pdf">[PDF]</a>的一作。这就是强人之间在同甘共苦之后勇攀科研的高峰吗？？？（笔者是一万个羡慕啊！！！）</p>
+</blockquote>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>前几天翻阅了一下<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/xpl/conhome/9796607/proceeding">IEEE INFOCOM’2022</a>中清华大学的Ren Ju老师以第一作者身份发表的一篇论文<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/abstract/document/9796843">[PDF]</a>，该论文使用的是ADMM方法进行求解。笔者只是对该文章进行了简单阅读，但是不难看出Ren Ju老师的数学功底是非常扎实的，不禁感叹自己何时能写出一篇这种高水平的论文。当然，还需要不断努力与认真思考。</p>
+<p><strong><em>Maybe：Interest Is the Best Motivation!</em></strong></p>
+<hr>
+<p>BGM：</p>
+<ul>
+<li>那个女孩 -- 韩庚</li>
+<li>陪我长大 -- 段奥娟</li>
+<li>Melody -- 陶喆</li>
+</ul>
+
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>[1]王继强. 若干NP-困难的组合最优化问题的近似算法[D].山东大学,2008.</p>
+<p>[2]徐大川，张家伟著. 设施选址问题的近似算法[M]. 北京：科学出版社, 2013.01.</p>
+<p>[3]<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/259516554">线性规划的对偶问题</a></p>
+<p>[4]<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_37959202/article/details/111614362?spm=1001.2101.3001.6650.2&amp;utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-2-111614362-blog-105546208.235%5Ev29%5Epc_relevant_default_base3&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-2-111614362-blog-105546208.235%5Ev29%5Epc_relevant_default_base3&amp;utm_relevant_index=5">Primal-Dual原对偶问题大致介绍</a></p>
+<p>[5]<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_48266700/article/details/128073491?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-1-128073491-blog-120396526.235^v28^pc_relevant_t0_download&amp;spm=1001.2101.3001.4242.2&amp;utm_relevant_index=4">近似算法中的技巧之一原始对偶模式</a></p>
+<p>[6]<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_43391414/article/details/115910289">线性规划的原始对偶算法</a></p>
+<p>[7]<a target="_blank" rel="noopener" href="https://nju-xy.github.io/2019/11/27/%E5%A4%A7%E4%B8%89%E4%B8%8A/%E9%AB%98%E7%BA%A7%E7%AE%97%E6%B3%95/%E9%AB%98%E7%BA%A7%E7%AE%97%E6%B3%95%E4%B9%8B%E5%AF%B9%E5%81%B6%E8%A7%84%E5%88%92/">高级算法之对偶规划</a></p>
+<p>[8]<a target="_blank" rel="noopener" href="https://blog.csdn.net/qx3501332/article/details/105546208">算法设计技巧: Primal-Dual</a></p>
+<p>[9]<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_48266700/article/details/128073491?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-1-128073491-blog-105546208.235^v29^pc_relevant_default_base3&amp;spm=1001.2101.3001.4242.2&amp;utm_relevant_index=4">近似算法中的技巧之一原始对偶模式</a></p>
+<p>[10]孟佳颖. 云边协同架构下的资源管理与优化[D].中国科学技术大学,2022.DOI:10.27517/d.cnki.gzkju.2022.000562.</p>
+<p>[11]Buchbinder N, Naor J S. The design of competitive online algorithms via a primal–dual approach[J]. Foundations and Trends® in Theoretical Computer Science, 2009, 3(2–3): 93-263.</p>
+<hr>
+<p>最后，附赠王晟老师的一个课件：基于LP的近似算法。PPT的具体内容如下：</p>
+<embed src="Approximate Algorithm Based On LP.pdf" width="100%" height="750" type="application/pdf">
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%BA%BF%E6%80%A7%E8%A7%84%E5%88%92/" rel="tag"># 线性规划</a>
+              <a href="/tags/%E8%BF%91%E4%BC%BC%E7%AE%97%E6%B3%95/" rel="tag"># 近似算法</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/04/13/How-To-Implement-A-Distributed-ML-Scheduling-System/" rel="prev" title="How To Implement A Distributed ML Scheduling System?">
+                  <i class="fa fa-chevron-left"></i> How To Implement A Distributed ML Scheduling System?
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/04/13/A-Deadline-Aware-Scheduler-for-DLT-Jobs%C2%B721-SoCC/" rel="next" title="A Deadline-Aware Scheduler for DLT Jobs·21'SoCC">
+                  A Deadline-Aware Scheduler for DLT Jobs·21'SoCC <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">QingweiJi</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.2.8/pdfobject.min.js","integrity":"sha256-tu9j5pBilBQrWSDePOOajCUdz6hWsid/lBNzK4KgEPM="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"per_page":true,"tags":"none","cdn":"//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>

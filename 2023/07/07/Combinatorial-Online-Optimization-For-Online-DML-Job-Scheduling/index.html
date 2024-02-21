@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="aZAi_GzxF1r-D-Yf309Fem5hn2LOFQL5nzT0ytAcrok">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha256-/4UQcSmErDzPCMAiuOiWPVVsNN2s3ZY/NsmXNcj0IFc=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.15.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="笔者在一段较长的时间里都苦恼于如何求解问题，探索了很多种方法，这个过程真的是繁琐又苦恼啊。最近刚好看到2023-Infocom中一篇由北邮博士Wang Fei作为第一作者发表的云边系统中应急需求响应的资源调度论文，里面使用的方法依然是之前笔者多次提到过的“紧凑-指数”优化技术。其本质是将多个具有耦合性的决策变量组合在一起，将任务调度问题抽象为组合优化问题去求解。这种方法最初是由周睿婷老师于2017">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Combinatorial Online Optimization For Online DML Job Scheduling">
+<meta property="og:url" content="http://example.com/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/index.html">
+<meta property="og:site_name" content="QingweiJi&#39; Blog">
+<meta property="og:description" content="笔者在一段较长的时间里都苦恼于如何求解问题，探索了很多种方法，这个过程真的是繁琐又苦恼啊。最近刚好看到2023-Infocom中一篇由北邮博士Wang Fei作为第一作者发表的云边系统中应急需求响应的资源调度论文，里面使用的方法依然是之前笔者多次提到过的“紧凑-指数”优化技术。其本质是将多个具有耦合性的决策变量组合在一起，将任务调度问题抽象为组合优化问题去求解。这种方法最初是由周睿婷老师于2017">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/1.png">
+<meta property="og:image" content="http://example.com/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/3.png">
+<meta property="og:image" content="http://example.com/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/2.png">
+<meta property="article:published_time" content="2023-07-07T07:24:46.000Z">
+<meta property="article:modified_time" content="2023-08-09T06:51:25.697Z">
+<meta property="article:author" content="QingweiJi">
+<meta property="article:tag" content="分布式训练">
+<meta property="article:tag" content="任务调度优化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/1.png">
+
+
+<link rel="canonical" href="http://example.com/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/","path":"2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/","title":"Combinatorial Online Optimization For Online DML Job Scheduling"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Combinatorial Online Optimization For Online DML Job Scheduling | QingweiJi' Blog</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QingweiJi' Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Q1%EF%BC%9A%E6%95%B4%E4%BD%93%E7%AE%97%E6%B3%95%E6%B5%81%E7%A8%8B"><span class="nav-number">1.</span> <span class="nav-text">Q1：整体算法流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Step1%EF%BC%9A%E8%AE%A1%E7%AE%97%E6%AF%8F%E4%B8%AA%E6%96%B0%E4%BB%BB%E5%8A%A1%E7%9A%84%E6%9C%80%E4%BC%98%E8%B0%83%E5%BA%A6%E6%96%B9%E6%A1%88%E5%8F%8A%E5%85%B6%E4%BB%BB%E5%8A%A1%E6%95%88%E7%9B%8A"><span class="nav-number">1.1.</span> <span class="nav-text">Step1：计算每个新任务的最优调度方案及其任务效益</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step2%EF%BC%9A%E7%BB%99%E5%AE%9A%E4%BF%A1%E6%81%AF%E4%B8%8B%E5%88%A9%E7%94%A8%E8%B4%AA%E5%BF%83%E7%AD%96%E7%95%A5%E8%AE%A1%E7%AE%97worker%E5%92%8Cps%E7%9A%84%E6%9C%80%E4%BC%98%E9%83%A8%E7%BD%B2%E6%96%B9%E6%A1%88"><span class="nav-number">1.2.</span> <span class="nav-text">Step2：给定信息下利用贪心策略计算worker和ps的最优部署方案</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Q2%EF%BC%9A%E6%AF%8F%E4%B8%AA%E4%BB%BB%E5%8A%A1%E7%9A%84%E5%8F%AF%E8%A1%8C%E8%B0%83%E5%BA%A6%E6%96%B9%E6%A1%88%E9%9B%86%E5%90%88"><span class="nav-number">2.</span> <span class="nav-text">Q2：每个任务的可行调度方案集合</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#System-deduction-process-case"><span class="nav-number">3.</span> <span class="nav-text">System deduction process case</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#At-the-End"><span class="nav-number">4.</span> <span class="nav-text">At the End</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">QingweiJi</p>
+  <div class="site-description" itemprop="description">Talk is cheap. Show me the papers.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="QingweiJi">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QingweiJi' Blog">
+      <meta itemprop="description" content="Talk is cheap. Show me the papers.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Combinatorial Online Optimization For Online DML Job Scheduling | QingweiJi' Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Combinatorial Online Optimization For Online DML Job Scheduling
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-07-07 15:24:46" itemprop="dateCreated datePublished" datetime="2023-07-07T15:24:46+08:00">2023-07-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-08-09 14:51:25" itemprop="dateModified" datetime="2023-08-09T14:51:25+08:00">2023-08-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB/" itemprop="url" rel="index"><span itemprop="name">论文精读</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>笔者在一段较长的时间里都苦恼于如何求解问题，探索了很多种方法，这个过程真的是繁琐又苦恼啊。最近刚好看到2023-Infocom中一篇由北邮博士Wang Fei作为第一作者发表的云边系统中应急需求响应的资源调度论文，里面使用的方法依然是之前笔者多次提到过的“紧凑-指数”优化技术。其本质是将多个具有耦合性的决策变量组合在一起，将任务调度问题抽象为组合优化问题去求解。这种方法最初是由周睿婷老师于2017年提出的，即使过去这么多年了，从笔者作为一个硕士的视角去看，这个方法依然没有old。因此，笔者以周老师发表2022年发表于TMC上的论文DPS和其学生Wang Ne博士于2023年发表在TC上的论文Astraea为例，对该方法进行详细解析。</p>
+<span id="more"></span>
+<p>要想掌握该方法，笔者认为应该解决以下三个问题：</p>
+<p><strong>1、整个算法的流程是什么？</strong></p>
+<p>算法的目标是什么？每一个步骤的目标、输入输出、已知/未知信息是什么？每一步要算什么、怎么算？</p>
+<p><strong>2、每个任务的可行调度方案集合是怎么来的？</strong></p>
+<p>每个可行调度方案指的是什么？怎么拿到的？其中包含哪些元素？每个元素是如何确定的？</p>
+<p><strong>3、价格函数的设计以及更新？</strong></p>
+<p>物理含义是什么？每一项是怎么计算的？每一项代表什么意思？如何更新价格函数？更新后又需要做什么？</p>
+<h2 id="Q1：整体算法流程"><a href="#Q1：整体算法流程" class="headerlink" title="Q1：整体算法流程"></a>Q1：整体算法流程</h2><p><img src="/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/1.png" alt></p>
+<center>图1：算法流程结构</center>
+
+<p>整体目标：社会福利最大化（详情请见论文）</p>
+<p>整体问题：当一个新的任务请求$j$在线到达时，系统/服务提供商需要立即决策能否接受它，如果接受，需要收取多少费用？</p>
+<p>总体步骤：在每个任务请求到达时，调度算法$A_{bestsche}$来寻找最佳调度方案，并根据当前价格计算出相应的成本。如果任务的效用大于成本（即$\mu_j &gt; 0$），就接受请求并根据价格函数来更新价格，反之拒绝该任务请求。</p>
+<p>以下是具体步骤：</p>
+<h3 id="Step1：计算每个新任务的最优调度方案及其任务效益"><a href="#Step1：计算每个新任务的最优调度方案及其任务效益" class="headerlink" title="Step1：计算每个新任务的最优调度方案及其任务效益"></a>Step1：计算每个新任务的最优调度方案及其任务效益</h3><p>目标：最大化任务效益$\mu_j$</p>
+<p>输入/已知：任务$j$的输入/投标信息$B_j$，服务器$s$上$w/p$类型的worker/ps的资源容量$C_{sw}/C_{sp}$，服务器$s$上$t$时隙已经分配的$w/p$类型的worker/ps的资源数量$q_{sw}(t)/h_{sp}(t)$，任务j的时隙变化范围$t \in [r_j, \hat{t_j}]$</p>
+<p>输出/需要求：任务$j$的最佳调度方案$l^*$及其相应的任务效益$\mu_j$</p>
+<p>怎么算：本质是固定一些变量，然后遍历剩余变量的全部情况，取出其中最好的即可</p>
+<p>（1）把worker/ps的类型、任务开始训练时间和需要分配的worker数量组成一个元组$(w,p,a_j,D_w)$，并枚举出这个元组的全部方案。其中，任意的$w \in [W]$，$p \in [P]$， $a_j \in [r_j, T]$，$D_w \in [1, D_j]$。</p>
+<p>（2）固定某个元组$(w,p,a_j,D_w)$，并将其作为参数来调用两种任务放置算法（集中式和分布式），以计算不同放置假设下的最小资源成本$cost$和相应的调度方案$l$。此时，任务的完成时间是可以计算出来的。</p>
+<p>任务的执行时长：</p>
+<p><img src="/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/3.png" alt></p>
+<p>其中${k^{wp}_j}$的值在确定了放置策后可以根据文中Eq.(1)直接计算出来。</p>
+<p>任务的完成时间：$\hat{t_j}=a_j+d_j$</p>
+<p>（3）比较两种放置假设下的所有可选的调度方案所获得的任务效用（真实价值-运行成本），并确定其中实现最高效用的最佳的调度方案。注意：只有当新的调度方案的收益大于当前的方案时，才更新为当前最优的调度</p>
+<p>此处可以跳转到Q2处，看到这一步了，每个任务$j$的每个可行调度方案$l$确定了哪些元素。</p>
+<h3 id="Step2：给定信息下利用贪心策略计算worker和ps的最优部署方案"><a href="#Step2：给定信息下利用贪心策略计算worker和ps的最优部署方案" class="headerlink" title="Step2：给定信息下利用贪心策略计算worker和ps的最优部署方案"></a>Step2：给定信息下利用贪心策略计算worker和ps的最优部署方案</h3><p>目标：最小化资源使用成本</p>
+<p>输入/已知：所有的元组$(w,p,a_j,D_w)$，$t$时隙服务器s上$w/p$类型的worker/ps资源的单价$\alpha_{sw}(t)/\beta_{sp}(t)$</p>
+<p>输出/需要求：每个元组对应的最小资源使用成本cost和对应的调度方案l </p>
+<p>怎么做：</p>
+<p>（1）给定某一元组$(w,p,a_j,D_w)$，计算出对应的任务的执行时间$d_j$和完成时间$\hat{t_j}$</p>
+<p>（2）集中式放置：按照资源使用成本的非递减顺序对相应的服务器进行排序并要求这些服务器是满足任务传输延迟约束（即只使用在$a_j$前能够到达的服务器）、计算资源容量约束的。然后分配PS（一个）能够满足带宽覆盖约束即可；</p>
+<p>（3）分布式放置：</p>
+<p>①按照worker价格$\alpha_{sw}(t)$的非递减顺序对服务器进行排序，并从最便宜的服务器开始尽可能多的部署worker，并尊重资源容量约束和worker数量约束;</p>
+<p>②根据最后使用的服务器将服务器分为两组。带宽覆盖约束中表明只需要一台服务器来部署PS。对于前一组，PS的数量由资源容量约束、带宽约束和其他ps分配约束限制。对于后一组，如果把原本放在前一个组的服务器上的一个worker移动到后一组中的一个服务器上后资源成本下降了，那么就尽可能多的把worker转移过来</p>
+<p>将该元组的所有调度方案都存储在$L$中，最后从$L$中选出成本最小的调度方案$l$就是最优的</p>
+<h2 id="Q2：每个任务的可行调度方案集合"><a href="#Q2：每个任务的可行调度方案集合" class="headerlink" title="Q2：每个任务的可行调度方案集合"></a>Q2：每个任务的可行调度方案集合</h2><p>任务$j$的每一个可行调度方案$l$对应一个满足约束条件(2)-(9)(12)-(15)(16a)的决策变量集合，除计算资源容量约束外。具体的约束见原文。同时，$l$中包含的决策变量如下所示：</p>
+<p><img src="/2023/07/07/Combinatorial-Online-Optimization-For-Online-DML-Job-Scheduling/2.png" alt></p>
+<center>图2：决策变量集合</center>
+
+<p>（1）到step1这一步确定的是$(w,p,a_j,D_w)$，相对应就确定了该任务的处理能力$k^{wp}_j$，然后根据两种放置策略可以分别计算出不同元组对应下的任务的执行时间$d_j$和完成时间$\hat{t_j}$。具体来说，绝对确定的决策变量是$o_{jw},o_{jp},k^{wp}_j,a_j$。</p>
+<p>（2）到step2这一步确定两种不同的放置假设下，具体的资源分配情况，即绝对确定的决策变量是$\varphi_j,y_{jsw}(t),z_{jsp}(t),\hat{t_j}$。</p>
+<h2 id="System-deduction-process-case"><a href="#System-deduction-process-case" class="headerlink" title="System deduction process case"></a>System deduction process case</h2><p>笔者在只根据算法流程对任务的调度流程进行推演时，总是对价格函数的更新部分思考不通，于是带入了一个具体的案例去推演整个系统的流程。案例写的非常详细，根据案例即可对该方法有了非常明确的了解。由于Markdown文件的排版因素，案例放在文中的最下面了。主要参考了DPS和Astraea来设定。</p>
+<h2 id="At-the-End"><a href="#At-the-End" class="headerlink" title="At the End"></a>At the End</h2><p>其实使用该方法的论文是比较多的，比如Prof.Ruiting Zhou以及Prof.Lei Jiao，他们在多篇论文中都使用该方法来求解多个具有耦合关系的决策变量。在笔者角度，这个方法并没有过时，虽然距离Prof.Ruiting Zhou提出并将其命名为“紧凑-指数优化”技术已经6-7年的时间了，但其本质思想就是一个组合优化的解决思路。所以该方法是非常值得学习的。</p>
+<hr>
+<p>BGM：</p>
+<ul>
+<li>余震，尘埃落定 --- 张敬轩</li>
+<li>心之科学，搜神记 --- 容祖儿</li>
+</ul>
+
+
+<hr>
+<p>案例具体内容如下：</p>
+<embed src="System-deduction-process-case.pdf" width="100%" height="750" type="application/pdf">
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E8%AE%AD%E7%BB%83/" rel="tag"># 分布式训练</a>
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6%E4%BC%98%E5%8C%96/" rel="tag"># 任务调度优化</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/05/30/A-Preemptive-Scheduler-for-DML-Jobs-In-Edge-Cloud%C2%B722-JSAC/" rel="prev" title="A Preemptive Scheduler for DML Jobs In Edge-Cloud·22'JSAC">
+                  <i class="fa fa-chevron-left"></i> A Preemptive Scheduler for DML Jobs In Edge-Cloud·22'JSAC
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/07/21/ElasticFlow-Serverless-DDL-Training-is-better/" rel="next" title="ElasticFlow: Serverless DDL Training is better?">
+                  ElasticFlow: Serverless DDL Training is better? <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">QingweiJi</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.2.8/pdfobject.min.js","integrity":"sha256-tu9j5pBilBQrWSDePOOajCUdz6hWsid/lBNzK4KgEPM="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"per_page":true,"tags":"none","cdn":"//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>

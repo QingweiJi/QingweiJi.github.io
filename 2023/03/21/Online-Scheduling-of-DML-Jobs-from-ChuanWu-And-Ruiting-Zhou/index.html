@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="aZAi_GzxF1r-D-Yf309Fem5hn2LOFQL5nzT0ytAcrok">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha256-/4UQcSmErDzPCMAiuOiWPVVsNN2s3ZY/NsmXNcj0IFc=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.15.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="本文是对香港大学Wu Chuan老师、武汉大学Li Zongpeng老师和东南大学Zhou Ruiting老师在Online Scheduling of DML Jobs方向的一系列相关研究的总结。DML即分布式机器学习(Distributed Machine Learning)。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Online Scheduling of DML Jobs from ChuanWu And Ruiting Zhou">
+<meta property="og:url" content="http://example.com/2023/03/21/Online-Scheduling-of-DML-Jobs-from-ChuanWu-And-Ruiting-Zhou/index.html">
+<meta property="og:site_name" content="QingweiJi&#39; Blog">
+<meta property="og:description" content="本文是对香港大学Wu Chuan老师、武汉大学Li Zongpeng老师和东南大学Zhou Ruiting老师在Online Scheduling of DML Jobs方向的一系列相关研究的总结。DML即分布式机器学习(Distributed Machine Learning)。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2023/03/21/images/Online-Scheduling-of-DML-Jobs-from-ChuanWu-And-Ruiting-Zhou/1.png">
+<meta property="article:published_time" content="2023-03-21T13:23:15.000Z">
+<meta property="article:modified_time" content="2023-04-13T09:36:20.217Z">
+<meta property="article:author" content="QingweiJi">
+<meta property="article:tag" content="分布式训练">
+<meta property="article:tag" content="任务调度优化">
+<meta property="article:tag" content="弹性训练">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/03/21/images/Online-Scheduling-of-DML-Jobs-from-ChuanWu-And-Ruiting-Zhou/1.png">
+
+
+<link rel="canonical" href="http://example.com/2023/03/21/Online-Scheduling-of-DML-Jobs-from-ChuanWu-And-Ruiting-Zhou/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2023/03/21/Online-Scheduling-of-DML-Jobs-from-ChuanWu-And-Ruiting-Zhou/","path":"2023/03/21/Online-Scheduling-of-DML-Jobs-from-ChuanWu-And-Ruiting-Zhou/","title":"Online Scheduling of DML Jobs from ChuanWu And Ruiting Zhou"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Online Scheduling of DML Jobs from ChuanWu And Ruiting Zhou | QingweiJi' Blog</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QingweiJi' Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">应用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#GPU%E9%9B%86%E7%BE%A4"><span class="nav-number">1.1.</span> <span class="nav-text">GPU集群</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%91%E8%BE%B9%E5%8D%8F%E5%90%8C"><span class="nav-number">1.2.</span> <span class="nav-text">云边协同</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A0%94%E7%A9%B6%E5%86%85%E5%AE%B9"><span class="nav-number">2.</span> <span class="nav-text">研究内容</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6"><span class="nav-number">2.1.</span> <span class="nav-text">任务调度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A1%E5%AE%9A%E4%BB%B7"><span class="nav-number">2.2.</span> <span class="nav-text">任务定价</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E5%BA%A6%E7%9B%AE%E6%A0%87"><span class="nav-number">3.</span> <span class="nav-text">调度目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E5%BA%A6%E6%96%B9%E5%BC%8F"><span class="nav-number">4.</span> <span class="nav-text">调度方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8A%80%E6%9C%AF%E6%89%8B%E6%AE%B5"><span class="nav-number">5.</span> <span class="nav-text">技术手段</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E5%AD%A6%E4%BC%98%E5%8C%96"><span class="nav-number">5.1.</span> <span class="nav-text">数学优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8EAI"><span class="nav-number">5.2.</span> <span class="nav-text">基于AI</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="nav-number">6.</span> <span class="nav-text">写在最后</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">QingweiJi</p>
+  <div class="site-description" itemprop="description">Talk is cheap. Show me the papers.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/21/Online-Scheduling-of-DML-Jobs-from-ChuanWu-And-Ruiting-Zhou/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="QingweiJi">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QingweiJi' Blog">
+      <meta itemprop="description" content="Talk is cheap. Show me the papers.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Online Scheduling of DML Jobs from ChuanWu And Ruiting Zhou | QingweiJi' Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Online Scheduling of DML Jobs from ChuanWu And Ruiting Zhou
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-03-21 21:23:15" itemprop="dateCreated datePublished" datetime="2023-03-21T21:23:15+08:00">2023-03-21</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-04-13 17:36:20" itemprop="dateModified" datetime="2023-04-13T17:36:20+08:00">2023-04-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93/" itemprop="url" rel="index"><span itemprop="name">论文总结</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>本文是对香港大学Wu Chuan老师、武汉大学Li Zongpeng老师和东南大学Zhou Ruiting老师在Online Scheduling of DML Jobs方向的一系列相关研究的总结。DML即分布式机器学习(Distributed Machine Learning)。</p>
+<span id="more"></span>
+<p>具体包括：</p>
+<ol>
+<li><p>Online Job Scheduling in Distributed Machine Learning Clusters<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=8486422">[INFOCOM’18]</a>(CCF A)</p>
+</li>
+<li><p>Online Scheduling of Heterogeneous Distributed Machine Learning Jobs<a target="_blank" rel="noopener" href="https://i2.cs.hku.hk/~cwu/papers/qzhang-mobihoc20.pdf">[Mobihoc’20]</a>(CCF B)</p>
+</li>
+<li><p>DPS: Dynamic Pricing and Scheduling for Distributed Machine Learning Jobs in Edge-Cloud Network<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=9847354">[TMC’22]</a>(CCF A)</p>
+</li>
+<li><p>Preemptive Scheduling for Distributed Machine Learning Jobs in Edge-Cloud Networks<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=9791406">[JSAC’22]</a>(CCF A)</p>
+</li>
+<li><p>Dynamic Pricing and Placing for Distributed Machine Learning Jobs: An Online Learning Approach<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=10043656">[JSAC’22]</a>(CCF A)</p>
+</li>
+<li><p>Online Scheduling of Distributed Machine Learning Jobs for Incentivizing Sharing in Multi-Tenant Systems<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=9774009">[TC’22]</a>(CCF A)</p>
+</li>
+</ol>
+<p>从应用场景上进行划分，可分为：GPU集群场景、云边协同场景</p>
+<p>从研究内容上进行划分，可分为：任务调度、任务定价</p>
+<p>从调度目标上进行划分，可分为：提升系统训练效率（包括最小化任务完成时间、最大化系统效用、最大化社会福利）、公平性</p>
+<p>从调度方式上进行划分，可分为：抢占式、非抢占式</p>
+<p>从技术手段上进行划分，可分为：数学优化、基于AI（如强化学习）</p>
+<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><h3 id="GPU集群"><a href="#GPU集群" class="headerlink" title="GPU集群"></a>GPU集群</h3><p>近期，针对GPU数据中心场景中的机器学习训练任务，提出了大量的调度器。对于这部分工作的总结，可详见新加坡南洋理工大学S-Lab的Wei Gao博士于2022年发表在arXiv的一篇综述：Deep Learning Workload Scheduling in GPU Datacenters: Taxonomy, Challenges and Vision<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2205.11913.pdf">[PDF]</a><a target="_blank" rel="noopener" href="https://github.com/S-Lab-System-Group/Awesome-DL-Scheduling-Papers">[Code]</a>。但是Survey包含的是2022年之前的工作，对于目前最新的研究，还需要自己去搜索。</p>
+<p>对于大部分调度器都是基于GPU集群环境设计的原因，笔者在此对survey中的阐述进行总结：机器学习通常由模型训练和模型推理组成，每个阶段都需要高性能的硬件资源（GPU和其他计算系统）来生成和服务于生产级别的ML模型。因此，IT行业和研究机构普遍建立GPU数据中心来满足其日益增长的ML开发需求。</p>
+<p>另一个解释可参考阿里<a target="_blank" rel="noopener" href="https://www.usenix.org/system/files/nsdi22-paper-weng.pdf">[22’NSDI]</a>：为了大规模加速ML工作负载，科技公司正在使用大量GPU设备构建快速并行计算基础设施，通常由多个用户共享，以提高利用率并降低成本。这些大型GPU集群运行各种ML工作负载(例如，训练和推理)，为ML-as-a-service(MLaaS)云提供基础设施支持。</p>
+<p>参考国防科技大学Chen Chen发表在<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=9894345">[IPCCC’22]</a>的论文，GPU集群的特点总结如下：</p>
+<ol>
+<li>数据传输延迟大：GPU集群通常由管理节点、存储节点和计算节点组成。为了加速分布式训练，集群中的服务器和GPU之间通常通过InfiniBand等高速互连的网络进行通信。同时，GPU集群通常使用HDFS、GFS和ClusterFS等分布式文件系统，来用于GB级别的大文件的传输。然而，ML任务具有大量需要传输的小文件，这将大大降低系统的I/O性能。因此，在ML训练的准备期间需要很长时间来传输数据。</li>
+<li>存在数量丰富的短期任务：商汤科技的生产数据分析报告显示，用户提交了大量的短期任务，如代码调试，只需要很短的时间执行，并且只需要消耗少量的资源。此外，大多数短期任务只需要使用一个GPU。</li>
+</ol>
+
+<blockquote>
+<p>笔者后续会阅读微软<a target="_blank" rel="noopener" href="https://www.usenix.org/system/files/atc19-jeon.pdf">[ATC’19]</a>、商汤<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2109.01313.pdf">[SC’21]</a>、阿里<a target="_blank" rel="noopener" href="https://www.usenix.org/system/files/nsdi22-paper-weng.pdf">[22’NSDI]</a>等商业级的机器学习生产集群报告，然后来补充。</p>
+</blockquote>
+<p>而对于GPU集群场景下ML任务训练的挑战，可直接参考Survey<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2205.11913.pdf">[PDF]</a>的2.2.2章节，作者已经总结的非常详细。</p>
+<h3 id="云边协同"><a href="#云边协同" class="headerlink" title="云边协同"></a>云边协同</h3><p>近期，云边协同场景受到了广泛关注。简单来说，云边协同将云计算与边缘计算紧密地结合起来，通过合理地分配云计算与边缘计算的任务，实现了云计算的下沉，将云计算、云分析扩展到边缘端。</p>
+<blockquote>
+<p>云边协同详细讲解：<a target="_blank" rel="noopener" href="https://www.51cto.com/article/703471.html">https://www.51cto.com/article/703471.html</a></p>
+<p>云边协同为什么非常重要：<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/330509383">https://www.zhihu.com/question/330509383</a></p>
+</blockquote>
+<p>最初了解到这个新的计算范式，是在Zhou Ruiting老师的两篇论文中：DPS<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=9847354">[TMC’22]</a>和Preemptive<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=9791406">[JSAC’22]</a>（笔者后续会对这篇文章进行详细解读）。</p>
+<p>为了深入了解这个新计算范式的背景和发展，在B站上学习了KubeEdge的论文讲座，其中中国科学技术大学的谈海生老师和天津大学的王晓飞老师的讲解对我的帮助很大。谈老师主要从他们的现有工作出发，王老师主要从云边协同的背景和研究意义出发。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1iP411u7La/?spm_id_from=333.788&amp;vd_source=e092b13f32ccf57ffa840f905bb9dd08">第一届云原生边缘计算学术研讨会B站链接</a></p>
+</blockquote>
+<p>另外，关于云边端协同/边缘计算支持的人工智能研究，笔者阅读了三篇相关综述，按照时间顺序排列，分别是清华大学Ren Ju老师（2022年“达摩院青橙奖”）于2022年发表在网络领域顶刊地位的IEEE Communications Surveys &amp; Tutorials上的一篇综述<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=9933792">[PDF]</a>、浙江大学Deng Shuiguang老师于2020年发表在通信领域非常好的期刊IEEE IOTJ上的一篇综述<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=9052677">[PDF]</a><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/548163593">[相关解读]</a><a target="_blank" rel="noopener" href="https://www.zhihu.com/question/319330609/answer/912407391">[相关研究基础]</a>以及中山大学Zhou Zhi老师于2019年发表在Proceedings of the IEEE上高被引的一篇综述<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=8736011">[PDF]</a>。</p>
+<p>参考Zhou Ruiting老师的两篇论文，云边协同场景特点及其对DML任务调度造成的挑战总结如下：</p>
+<ol>
+<li>边缘服务器靠近数据源，传输延迟低，是放置ML任务的首选。但边缘服务器上的资源通常是稀缺且异构的，因此可能会导致任务分配的所有节点（以PS架构为例）无法部署在同一台边缘服务器上，从而造成worker与PS之间的频繁通信，继而影响任务的完成时间。</li>
+<li>由于云数据中心与用户之间的链路较长，并且在数据传输的过程中受到网络带宽等因素的影响，从而导致服务延迟较大。但中央/远端云服务器上的计算资源通常非常丰富，任务使用的worker和PS可以轻松地共同托管在云上。</li>
+</ol>
+
+<h2 id="研究内容"><a href="#研究内容" class="headerlink" title="研究内容"></a>研究内容</h2><h3 id="任务调度"><a href="#任务调度" class="headerlink" title="任务调度"></a>任务调度</h3><p>第一篇论文是香港大学的Yixin Bao博士于2018年发表在通信网络领域顶会INFOCOM上的一篇论文。现有的大型分布式机器学习集群的任务调度器，如<a target="_blank" rel="noopener" href="https://dl.acm.org/doi/pdf/10.1145/2741948.2741964">Borg</a>、<a target="_blank" rel="noopener" href="https://www.cse.ust.hk/~weiwa/teaching/Fall15-COMP6611B/reading_list/YARN.pdf">YARN</a>，通常都是由用户提交任务的资源配置情况，并且由于这些调度系统的默认调度策略大部分都是FIFO、DRF和基于优先级的贪婪方法，导致系统不允许任务在训练过程使用不同数量的并发的worker，而是一直保持不变，直到训练完成。对于DML任务来说，这种静态的资源分配方式无法充分利用ML集群的资源，从而阻碍最佳的训练速度。此外，由于分布式机器学习模型训练通常是资源密集型且非常耗时的，这种方式也会导致增加训练成本，使整个训练过程变得更加昂贵。因此，ML集群运营商面临的一个基本挑战是如何有效地安排用户提交的训练任务，以最大限度地利用可用的服务器资源（尤其是昂贵但性能强大的GPU资源），并加速任务的训练过程。为了解决这个问题，该文章设计了一个在线算法OASiS,用于采取异步训练的任务在线接纳控制和调度。OASiS为每个任务计算其训练的最佳schedule，并在每个时隙动态调整任务使用的worker数量，以实现最佳的资源利用率和任务训练性能。同时，根据精心设计的资源价格函数来决策任务是否被接纳(任务的训练效用为正则接受)，以实现系统的长期效用最大化。</p>
+<blockquote>
+<p>对于资源价格函数的具体解释，可以直接看第三篇论文DPS。</p>
+</blockquote>
+<p>第二篇论文是第一篇的扩展版，由武汉大学的硕士研究生Zhang Qin于2020年发表在CCF B类会议Mobihoc上，其<a target="_blank" rel="noopener" href="https://kns.cnki.net/kcms2/article/abstract?v=3uoqIhG8C475KOm_zrgu4lQARvep2SAkueNJRSNVX-zc5TVHKmDNkhVTI-rLezILhi59bbSeEHVY4TrV4vU87TmzgzQaiVSS&amp;uniplatform=NZKPT">硕士毕业论文</a>可在中国知网搜索到。这是笔者阅读的分布式机器学习任务的调度优化方向的第一篇论文，受益很大。记得初读这篇文章时，颇为吃力，只觉得整篇文章为了求解出问题而进行的转换既巧妙又可行，在阅读了整整一周之后，才将这篇论文全部读懂（仅从笔者理解的角度）。</p>
+<p>该论文以DML任务的资源需求弹性特征为切入点研究DML任务调度问题，其中资源需求弹性可解读为不同资源配置下DML任务所需的完成时间不同。论文2是论文1的扩展，论文1中只考虑了任务使用的并发的worker数量，论文2增加了对于单个任务来说采取不同类型的worker和PS可能性的考虑。不同类型的节点，比如不同类型的GPU、CPU等。论文1考虑的是异步的数据并行训练，任务使用的worker和PS放置在不同的物理服务器上，论文2增加了对任务的所有节点放置在同一台物理服务器上的考虑。</p>
+<p>对于第二篇论文来说，大部分篇幅都用来进行问题的转换，以求解出该目标下的一个可行解。该论文提出了一个在线算法<code>A_online</code>，当每个任务在线到达时，该算法会决策任务的执行窗口（就是在哪个时隙执行任务）、并发的worker和PS的数量和资源配置（即类型），从而最大程度地减少任务平均完成时间。具体来说，该论文将原在线优化问题（总加权完成时间最小化问题）通过一个数学引理，转化为一个离线的总权重最大化问题，并由离线问题的对偶α-近似算法转化为原在线问题的4α–近似算法，从而得到在线问题的可行解（笔者认为作者团队对于数学求解方法的积累是有一定深度的）。在求解离线最优问题的过程中，使用了<strong>紧凑-指数优化</strong>技术进行问题重写（笔者会在下面的技术手段部分详细说明），然后将总权重最大化问题转换为成本最小化问题，从而为每个任务决策出一个最佳的调度方案。</p>
+<p><img src="../images/Online-Scheduling-of-DML-Jobs-from-ChuanWu-And-Ruiting-Zhou/1.png" alt></p>
+<h3 id="任务定价"><a href="#任务定价" class="headerlink" title="任务定价"></a>任务定价</h3><p>第1、2、3、5篇paper中都涉及到了任务定价的部分。其中，第1、2篇是在问题的转换过程中涉及了价格函数的涉及，主要是为了求解数学模型，而不是作为一块具体的研究目标和研究内容。</p>
+<p>对于任务动态定价的详细内容，可直接阅读两篇DPS论文，也就是第3、5篇。由于笔者目前重点关注的是任务的动态调度和弹性训练，所以对于此部分，不做过多赘述。</p>
+<p>简单来说，以PS架构为例，现有的任务调度器可能会造成任务的worker和PS被放置在不同的物理服务上，从而加大任务运行时间的不确定性。而现有的云定价策略通常是根据任务的运行时间来收取固定的价格，这种”pay-as-you-go”的定价策略虽然简单，但不适合运行时间随机的DML任务，只能根据完成任务放置后的位置来估计用户需要支付的费用。因此，为了解决上述问题，Zhou Ruiting老师基于拍卖机制，分别以社会福利最大化和云服务提供商利润最大化为目标，设计了动态的任务调度和定价算法。</p>
+<p>第5篇论文是在第3篇论文基础上，增加使用Multi-Armed Bandit(MAB)技术来学习基于过去销售的未知信息。</p>
+<h2 id="调度目标"><a href="#调度目标" class="headerlink" title="调度目标"></a>调度目标</h2><p>关于调度目标，非常好区分。</p>
+<p>第1、2、3、4、5篇都是以最小化任务完成时间为目标，具体的表现形式不同，如1为最大化系统效用、2为最小化所有任务的加权完成时间、3为最大化社会福利、4为最小化任务完成时间、5为最大化服务提供商利润。</p>
+<p>第6篇追求的是多用户之间的公平性。</p>
+<h2 id="调度方式"><a href="#调度方式" class="headerlink" title="调度方式"></a>调度方式</h2><p>关于调度方式，笔者是按照是否考虑抢占来划分的。</p>
+<p>除第四篇论文外，其余几篇都是没有考虑资源抢占的。</p>
+<p>这部分的内容，也就是对于第四篇论文的详细解读，笔者会在后续单独写一篇博客。</p>
+<h2 id="技术手段"><a href="#技术手段" class="headerlink" title="技术手段"></a>技术手段</h2><h3 id="数学优化"><a href="#数学优化" class="headerlink" title="数学优化"></a>数学优化</h3><p>由于模型的约束条件中涉及集合和自然语言描述部分，采用了一种“紧凑-指数（compact exponential）优化技术”，简单来说，就是将满足约束条件的决策变量集合编码到一个变量中，这个新变量集合的可能取值情况数量为指数级，也就是说，在ILP问题中引入了指数级的变量，每个变量对应任务的一个可能的调度方案。通过紧凑-指数优化技术将原问题模型重写为传统打包结构的ILP问题，且由于时间复杂性的问题，直接求解这个紧凑指数的ILP问题是不可行的，所以又利用对偶和松弛等方法进行问题的求解。</p>
+<p>这个技术手段首次出现在Zhou Ruiting老师于2017年发表在IEEE/ACM Transactions on Networking期刊上论文“An Efficient Cloud Market Mechanism for Computing Jobs With Soft Deadlines<a target="_blank" rel="noopener" href="https://core.ac.uk/download/pdf/95559144.pdf">[PDF]</a>”中。并在第2、3、6篇论文的模型求解过程中使用到了该技术。</p>
+<p>由于笔者只在网上找到了该项技术的学术报告摘要部分<a target="_blank" rel="noopener" href="https://www.wust.edu.cn/jsjkx/2020/0525/c1584a216541/page.htm">[链接]</a>。从这里可以发现设计“紧凑-指数优化技术”的motivation：</p>
+<blockquote>
+<p>“李宗鹏教授介绍，计算机科学中很多重要的优化问题是NP-hard复杂度。其中部分问题可以表示成0-1整数线性规划问题，并使用primal-dual框架设计有效的近似算法。这种primal-dual思想对约束条件的形式有较强的限制。研究过程中，他所在团队尝试通过引入新的算法思想设计思想来打破这一限制，扩大primal-dual算法的适用范围。”</p>
+</blockquote>
+<h3 id="基于AI"><a href="#基于AI" class="headerlink" title="基于AI"></a>基于AI</h3><p>除第五篇论文外，其余几篇论文都是使用数学优化方法来求解模型。第五篇中设计了一种基于<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/efb723420ee6">MAB</a>框架的在线学习策略，以实现对未知输入的估计，并根据任务运行时间的反馈计算奖励值。</p>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>笔者对于分布式机器学习训练任务的调度优化方向的了解与学习就是Wu Chuan老师、Li Zongpeng老师和Zhou Ruiting老师的这几篇论文开始的。正如笔者在上面所说，初读之时十分痛苦，细读之后觉得巧妙无比，反复阅读之后不断思考自己如何写出类似的高质量的论文。只能说，还需努力啊！</p>
+<p><strong><em>Maybe: The Beginning Of Learning Is Painful Because You Are Thinking!</em></strong></p>
+<hr>
+<p>BGM：</p>
+<ul>
+<li>再见深海（微亮的瞬间）--唐汉霄</li>
+<li>我记得 --赵雷</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E8%AE%AD%E7%BB%83/" rel="tag"># 分布式训练</a>
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6%E4%BC%98%E5%8C%96/" rel="tag"># 任务调度优化</a>
+              <a href="/tags/%E5%BC%B9%E6%80%A7%E8%AE%AD%E7%BB%83/" rel="tag"># 弹性训练</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/03/26/How-To-Support-Elastic-Trainging/" rel="next" title="How To Support Elastic Trainging">
+                  How To Support Elastic Trainging <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">QingweiJi</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.2.8/pdfobject.min.js","integrity":"sha256-tu9j5pBilBQrWSDePOOajCUdz6hWsid/lBNzK4KgEPM="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"per_page":true,"tags":"none","cdn":"//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>
