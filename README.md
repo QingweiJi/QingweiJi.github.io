@@ -2,7 +2,7 @@ I’m actively maintaining a personal blog in madarin Chinese, which is about su
 
 Please jump to https://qingweiji.github.io/
 
-The topics include machine learning systems, distributed training, serverless computing, etc. 
+The topics include machine learning scheduling systems, distributed training, LLM training/inference, etc. 
 
 Anyone is welcomed to leave comments and discuss with me!
 
